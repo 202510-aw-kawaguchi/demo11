@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
 
 <head>
     <meta charset="UTF-8">
@@ -11,34 +11,28 @@
     <div class="container mt-4">
         <h1>ToDo新規作成</h1>
 
-        <!-- th:action でPOST先を指定 -->
-        <form th:action="@{/todos/confirm}" method="post">
-
-            <!-- タイトル（必須） -->
+        <form th:action="@{/todos/confirm}" method="post" th:object="${todoForm}">
             <div class="mb-3">
                 <label for="title" class="form-label">タイトル <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="title" name="title" required>
+                <input type="text" class="form-control" id="title" th:field="*{title}" required>
             </div>
 
-            <!-- 説明（任意） -->
             <div class="mb-3">
                 <label for="description" class="form-label">説明</label>
-                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                <textarea class="form-control" id="description" th:field="*{description}" rows="3"></textarea>
             </div>
 
-            <!-- 優先度（セレクトボックス） -->
             <div class="mb-3">
                 <label for="priority" class="form-label">優先度</label>
-                <select class="form-select" id="priority" name="priority">
-                    <option value="1">1（最高）</option>
-                    <option value="2">2（高）</option>
-                    <option value="3" selected>3（普通）</option>
-                    <option value="4">4（低）</option>
-                    <option value="5">5（最低）</option>
+                <select class="form-select" id="priority" th:field="*{priority}">
+                    <option value="1">1 (低)</option>
+                    <option value="2">2</option>
+                    <option value="3">3 (中)</option>
+                    <option value="4">4</option>
+                    <option value="5">5 (高)</option>
                 </select>
             </div>
 
-            <!-- ボタン -->
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">確認</button>
                 <a th:href="@{/todos}" class="btn btn-secondary">戻る</a>

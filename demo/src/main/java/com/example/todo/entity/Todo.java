@@ -30,6 +30,9 @@ public class Todo {
     @Column(columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean completed = false;
 
+    @Version
+    private Long version;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

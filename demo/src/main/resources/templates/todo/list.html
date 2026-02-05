@@ -29,6 +29,10 @@
             <span th:text="${message}"></span>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
 
         <div class="card shadow-sm">
             <!-- データがある場合 -->
@@ -46,7 +50,11 @@
                         </thead>
                         <tbody>
                             <tr th:each="todo : ${todos}">
-                                <td class="ps-3" th:text="${todo.title}">サンプルタスク</td>
+                                <!-- 完了状態に応じて打ち消し線表示 -->
+                                <td class="ps-3"
+                                    th:classappend="${todo.completed} ? 'text-decoration-line-through text-muted'">
+                                    <span th:text="${todo.title}">サンプルタスク</span>
+                                </td>
                                 <td>
                                     <span th:if="${todo.dueDate != null}"
                                         th:classappend="${todo.dueDate.isBefore(T(java.time.LocalDate).now())} ? 'text-danger' : ''"
@@ -58,9 +66,16 @@
                                         <span th:each="i : ${#numbers.sequence(1, todo.priority)}">★</span>
                                     </span>
                                 </td>
+                                <!-- 完了切り替えボタン -->
                                 <td>
-                                    <span th:if="${todo.completed}" class="text-success" aria-label="completed">✓</span>
-                                    <span th:unless="${todo.completed}" class="text-muted">-</span>
+                                    <form th:action="@{/todos/{id}/toggle(id=${todo.id})}" method="post"
+                                        class="d-inline">
+                                        <button type="submit"
+                                            th:class="${todo.completed} ? 'btn btn-sm btn-outline-secondary' : 'btn btn-sm btn-success'">
+                                            <span th:if="${todo.completed}">未完了に戻す</span>
+                                            <span th:unless="${todo.completed}">完了にする</span>
+                                        </button>
+                                    </form>
                                 </td>
                                 <td class="text-end pe-3">
                                     <a class="btn btn-sm btn-outline-secondary me-1"
@@ -108,7 +123,7 @@
                 alert.classList.remove('show');
                 setTimeout(() => alert.remove(), 150);
             }
-        }, 3000); // 3秒後に消える
+        }, 3000);
     </script>
 </body>
 

@@ -24,10 +24,17 @@
                     <dd class="col-sm-9" th:text="${todo.id}">1</dd>
                     <dt class="col-sm-3">タイトル</dt>
                     <dd class="col-sm-9" th:text="${todo.title}">サンプルタスク</dd>
-                    <dt class="col-sm-3">期限</dt>
-                    <dd class="col-sm-9" th:text="${todo.dueDate}">2026-02-04</dd>
-                    <dt class="col-sm-3">ステータス</dt>
-                    <dd class="col-sm-9" th:text="${todo.status}">未着手</dd>
+                    <dt class="col-sm-3">期限日</dt>
+                    <dd class="col-sm-9">
+                        <span th:if="${todo.dueDate != null}"
+                              th:text="${#temporals.format(todo.dueDate, 'yyyy/MM/dd')}">2026/02/04</span>
+                        <span th:if="${todo.dueDate == null}" class="text-muted">未設定</span>
+                    </dd>
+                    <dt class="col-sm-3">完了状態</dt>
+                    <dd class="col-sm-9">
+                        <span th:if="${todo.completed}" class="text-success">完了</span>
+                        <span th:unless="${todo.completed}" class="text-muted">未完了</span>
+                    </dd>
                 </dl>
             </div>
         </div>

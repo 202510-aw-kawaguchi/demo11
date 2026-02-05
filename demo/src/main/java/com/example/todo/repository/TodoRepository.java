@@ -25,4 +25,7 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
     // @Queryを使ったカスタムクエリ
     @Query("SELECT t FROM Todo t WHERE t.completed = false ORDER BY t.dueDate ASC")
     List<Todo> findUncompletedOrderByDueDate();
+
+    // 作成日時の新しい順
+    List<Todo> findAllByOrderByCreatedAtDesc();
 }

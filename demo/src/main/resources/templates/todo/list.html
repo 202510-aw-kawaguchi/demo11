@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ToDo一覧</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 
 <body class="bg-light">
@@ -23,24 +24,37 @@
         </div>
 
         <div class="card shadow-sm">
-            <div class="card-body p-0">
+            <!-- データがある場合 -->
+            <div class="card-body p-0" th:if="${!#lists.isEmpty(todos)}">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th scope="col" class="ps-3">ID</th>
-                                <th scope="col">タイトル</th>
-                                <th scope="col">期限</th>
-                                <th scope="col">ステータス</th>
+                                <th scope="col" class="ps-3">タイトル</th>
+                                <th scope="col">期限日</th>
+                                <th scope="col">優先度</th>
+                                <th scope="col">完了</th>
                                 <th scope="col" class="text-end pe-3">操作</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:each="todo : ${todos}">
-                                <td class="ps-3" th:text="${todo.id}">1</td>
-                                <td th:text="${todo.title}">サンプルタスク</td>
-                                <td th:text="${todo.dueDate}">2026-02-04</td>
-                                <td th:text="${todo.status}">未着手</td>
+                                <td class="ps-3" th:text="${todo.title}">サンプルタスク</td>
+                                <td>
+                                    <span th:if="${todo.dueDate != null}"
+                                        th:classappend="${todo.dueDate.isBefore(T(java.time.LocalDate).now())} ? 'text-danger' : ''"
+                                        th:text="${#temporals.format(todo.dueDate, 'yyyy/MM/dd')}">2026/02/05</span>
+                                    <span th:if="${todo.dueDate == null}" class="text-muted">未設定</span>
+                                </td>
+                                <td>
+                                    <span class="text-warning" aria-label="priority">
+                                        <span th:each="i : ${#numbers.sequence(1, todo.priority)}">★</span>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span th:if="${todo.completed}" class="text-success" aria-label="completed">✓</span>
+                                    <span th:unless="${todo.completed}" class="text-muted">-</span>
+                                </td>
                                 <td class="text-end pe-3">
                                     <a class="btn btn-sm btn-outline-secondary me-1"
                                         th:href="@{/todos/{id}(id=${todo.id})}">詳細</a>
@@ -50,12 +64,23 @@
                                         th:href="@{/todos/{id}/delete(id=${todo.id})}">削除</a>
                                 </td>
                             </tr>
-                            <tr th:if="${#lists.isEmpty(todos)}">
-                                <td colspan="5" class="text-center text-muted py-4">ToDoがありません</td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <!-- データがない場合 -->
+            <div th:unless="${!#lists.isEmpty(todos)}" class="card-body text-center py-5">
+                <div class="mb-4">
+                    <span class="material-icons" style="font-size: 4rem; color: #9ca3af;">
+                        inbox
+                    </span>
+                </div>
+                <h4 class="text-muted">ToDoがまだ登録されていません</h4>
+                <p class="text-muted mb-4">最初のToDoを作成しましょう</p>
+                <a th:href="@{/todos/new}" class="btn btn-primary">
+                    <span class="material-icons">add</span> 新規作成
+                </a>
             </div>
         </div>
     </main>

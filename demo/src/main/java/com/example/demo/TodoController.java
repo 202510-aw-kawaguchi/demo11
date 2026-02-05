@@ -9,20 +9,27 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.todo.service.TodoService;
+import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 @Controller
+@RequiredArgsConstructor
 public class TodoController {
 
     private final TodoService todoService;
 
-    public TodoController(TodoService todoService) {
-        this.todoService = todoService;
-    }
-
     // ToDo一覧画面を表示する
     @GetMapping("/todos")
-    public String listTodos(Model model) {
+    public String list(Model model) {
+        List<?> todos = todoService.findAll();
+        model.addAttribute("todos", todos);
         return "todo/list";
+    }
+
+    @GetMapping("/")
+    public String root() {
+        return "redirect:/todos";
     }
 
     // ToDo新規登録画面を表示する

@@ -5,6 +5,7 @@ import com.example.todo.repository.TodoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
@@ -26,5 +27,13 @@ public class TodoService {
 
     public List<Todo> findByCompleted(boolean completed) {
         return todoRepository.findByCompleted(completed);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        if (!todoRepository.existsById(id)) {
+            throw new IllegalArgumentException("指定されたToDoが見つかりません: " + id);
+        }
+        todoRepository.deleteById(id);
     }
 }

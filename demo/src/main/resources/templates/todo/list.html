@@ -23,6 +23,13 @@
             <a class="btn btn-primary" th:href="@{/todos/new}">新規作成</a>
         </div>
 
+        <!-- フラッシュメッセージ表示 -->
+        <div th:if="${message}" th:classappend="'alert alert-' + ${messageType ?: 'info'}"
+            class="alert alert-dismissible fade show" role="alert">
+            <span th:text="${message}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
         <div class="card shadow-sm">
             <!-- データがある場合 -->
             <div class="card-body p-0" th:if="${!#lists.isEmpty(todos)}">
@@ -60,8 +67,10 @@
                                         th:href="@{/todos/{id}(id=${todo.id})}">詳細</a>
                                     <a class="btn btn-sm btn-outline-primary me-1"
                                         th:href="@{/todos/{id}/edit(id=${todo.id})}">編集</a>
-                                    <a class="btn btn-sm btn-outline-danger"
-                                        th:href="@{/todos/{id}/delete(id=${todo.id})}">削除</a>
+                                    <form th:action="@{/todos/{id}/delete(id=${todo.id})}" method="post"
+                                        class="d-inline" onsubmit="return confirm('本当に削除しますか？');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">削除</button>
+                                    </form>
                                 </td>
                             </tr>
                         </tbody>
@@ -90,6 +99,17 @@
             <span>&copy; 2026 ToDoアプリ</span>
         </div>
     </footer>
+
+    <!-- 自動で消えるJavaScript -->
+    <script th:if="${message}">
+        setTimeout(function () {
+            const alert = document.querySelector('.alert');
+            if (alert) {
+                alert.classList.remove('show');
+                setTimeout(() => alert.remove(), 150);
+            }
+        }, 3000); // 3秒後に消える
+    </script>
 </body>
 
 </html>

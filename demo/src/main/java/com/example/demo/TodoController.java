@@ -3,6 +3,7 @@ package com.example.demo;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -61,11 +62,11 @@ public class TodoController {
             @RequestParam String title,
             @RequestParam(required = false) String description,
             @RequestParam(defaultValue = "3") Integer priority,
-            Model model) {
-        model.addAttribute("title", title);
-        model.addAttribute("description", description);
-        model.addAttribute("priority", priority);
-        return "todo/complete";
+            RedirectAttributes redirectAttributes) {
+        todoService.create(title, description);
+        redirectAttributes.addFlashAttribute("message", "登録が完了しました");
+        redirectAttributes.addFlashAttribute("messageType", "success");
+        return "redirect:/todos";
     }
 
     @PostMapping("/todos/create")
@@ -77,6 +78,19 @@ public class TodoController {
         todoService.create(title, description);
 
         redirectAttributes.addFlashAttribute("message", "登録が完了しました");
+        return "redirect:/todos";
+    }
+
+    @PostMapping("/todos/{id}/delete")
+    public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        todoService.delete(id);
+        redirectAttributes.addFlashAttribute("message", "ToDoを削除しました");
+        return "redirect:/todos";
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public String handleTodoNotFound(IllegalArgumentException ex, RedirectAttributes redirectAttributes) {
+        redirectAttributes.addFlashAttribute("error", "削除に失敗しました");
         return "redirect:/todos";
     }
 }

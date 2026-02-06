@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Sort;
 import org.springframework.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -31,18 +32,27 @@ public class TodoController {
     private final TodoService todoService;
 
     @GetMapping("/todos")
-    public String list(@RequestParam(required = false) String keyword, Model model) {
+    public String list(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "createdAt") String sort,
+            @RequestParam(required = false, defaultValue = "desc") String dir,
+            Model model) {
         List<?> todos;
+        String sortKey = normalizeSortKey(sort);
+        Sort.Direction direction = "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort sortSpec = Sort.by(direction, sortKey);
         if (StringUtils.hasText(keyword)) {
             String trimmed = keyword.trim();
-            todos = todoService.searchByTitle(trimmed);
+            todos = todoService.searchByTitle(trimmed, sortSpec);
             model.addAttribute("keyword", trimmed);
         } else {
-            todos = todoService.findAll();
+            todos = todoService.findAll(sortSpec);
             model.addAttribute("keyword", "");
         }
         model.addAttribute("todos", todos);
         model.addAttribute("resultCount", todos.size());
+        model.addAttribute("sort", sortKey);
+        model.addAttribute("dir", direction.name().toLowerCase());
         return "todo/list";
     }
 
@@ -157,6 +167,16 @@ public class TodoController {
         redirectAttributes.addFlashAttribute("error", "指定されたToDoが見つかりません");
         redirectAttributes.addFlashAttribute("messageType", "danger");
         return "redirect:/todos";
+    }
+
+    private String normalizeSortKey(String sort) {
+        if ("title".equalsIgnoreCase(sort)) {
+            return "title";
+        }
+        if ("completed".equalsIgnoreCase(sort) || "status".equalsIgnoreCase(sort)) {
+            return "completed";
+        }
+        return "createdAt";
     }
 }
 

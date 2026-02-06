@@ -7,6 +7,11 @@
     <title>ToDo一覧</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        body {
+            writing-mode: horizontal-tb;
+        }
+    </style>
 </head>
 
 <body class="bg-light">
@@ -56,10 +61,38 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th scope="col" class="ps-3">タイトル</th>
+                                <th scope="col" class="ps-3">
+                                    <a class="text-decoration-none text-dark"
+                                       th:href="@{/todos(sort='title',dir=${sort == 'title' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword})}">
+                                        タイトル
+                                        <span class="ms-1">
+                                            <span th:classappend="${sort == 'title' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
+                                            <span th:classappend="${sort == 'title' and dir == 'desc'} ? 'text-dark' : 'text-muted'">▼</span>
+                                        </span>
+                                    </a>
+                                </th>
+                                <th scope="col">
+                                    <a class="text-decoration-none text-dark"
+                                       th:href="@{/todos(sort='createdAt',dir=${sort == 'createdAt' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword})}">
+                                        作成日
+                                        <span class="ms-1">
+                                            <span th:classappend="${sort == 'createdAt' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
+                                            <span th:classappend="${sort == 'createdAt' and dir == 'desc'} ? 'text-dark' : 'text-muted'">▼</span>
+                                        </span>
+                                    </a>
+                                </th>
                                 <th scope="col">期限日</th>
                                 <th scope="col">優先度</th>
-                                <th scope="col">状態</th>
+                                <th scope="col">
+                                    <a class="text-decoration-none text-dark"
+                                       th:href="@{/todos(sort='completed',dir=${sort == 'completed' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword})}">
+                                        状態
+                                        <span class="ms-1">
+                                            <span th:classappend="${sort == 'completed' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
+                                            <span th:classappend="${sort == 'completed' and dir == 'desc'} ? 'text-dark' : 'text-muted'">▼</span>
+                                        </span>
+                                    </a>
+                                </th>
                                 <th scope="col" class="text-end pe-3">操作</th>
                             </tr>
                         </thead>
@@ -69,6 +102,11 @@
                                 <td class="ps-3"
                                     th:classappend="${todo.completed} ? 'text-decoration-line-through text-muted'">
                                     <span th:text="${todo.title}">サンプルタスク</span>
+                                </td>
+                                <td>
+                                    <span th:if="${todo.createdAt != null}"
+                                        th:text="${#temporals.format(todo.createdAt, 'yyyy/MM/dd HH:mm')}">2026/02/06 10:30</span>
+                                    <span th:if="${todo.createdAt == null}" class="text-muted">-</span>
                                 </td>
                                 <td>
                                     <span th:if="${todo.dueDate != null}"

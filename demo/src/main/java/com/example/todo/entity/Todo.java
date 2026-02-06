@@ -1,57 +1,50 @@
 package com.example.todo.entity;
 
-import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "todos")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Todo {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
     private String title;
 
-    @Column(length = 50)
     private String author;
 
-    @Column(length = 500)
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
     private Category category;
+
+    private User user;
 
     private LocalDate dueDate;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 10, nullable = false)
     private Priority priority = Priority.MEDIUM;
 
-    @Column(columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean completed = false;
 
-    @Version
     private Long version;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+    public Long getUserId() {
+        return user != null ? user.getId() : null;
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    public Long getCategoryId() {
+        return category != null ? category.getId() : null;
+    }
+
+    public String getDetail() {
+        return description;
+    }
+
+    public void setDetail(String detail) {
+        this.description = detail;
     }
 }

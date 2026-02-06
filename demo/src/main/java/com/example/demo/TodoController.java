@@ -14,20 +14,24 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.util.StringUtils;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.http.HttpStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import com.example.todo.entity.Priority;
 import com.example.todo.entity.Todo;
 import com.example.todo.entity.Category;
+import com.example.todo.entity.User;
 
 import com.example.demo.form.TodoForm;
 import com.example.todo.exception.TodoNotFoundException;
 import com.example.todo.service.CategoryService;
 import com.example.todo.service.TodoService;
+import com.example.todo.mapper.UserMapper;
 import java.util.List;
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
@@ -42,6 +46,7 @@ public class TodoController {
 
     private final TodoService todoService;
     private final CategoryService categoryService;
+    private final UserMapper userMapper;
 
     @GetMapping("/todos")
     public String list(
@@ -50,45 +55,38 @@ public class TodoController {
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "createdAt") String sort,
             @RequestParam(required = false, defaultValue = "desc") String dir,
+            @AuthenticationPrincipal UserDetails principal,
             Model model) {
-        Page<Todo> todoPage;
+        User user = requireUser(principal);
+        int pageSize = 10;
         String sortKey = normalizeSortKey(sort);
-        Sort.Direction direction = "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Sort sortSpec = Sort.by(direction, sortKey);
-        PageRequest pageable = PageRequest.of(Math.max(page, 0), 10, sortSpec);
-        if (StringUtils.hasText(keyword) && categoryId != null) {
-            String trimmed = keyword.trim();
-            todoPage = todoService.searchByTitleAndCategory(trimmed, categoryId, pageable);
-            model.addAttribute("keyword", trimmed);
-        } else if (StringUtils.hasText(keyword)) {
-            String trimmed = keyword.trim();
-            todoPage = todoService.searchByTitle(trimmed, pageable);
-            model.addAttribute("keyword", trimmed);
-        } else if (categoryId != null) {
-            todoPage = todoService.findByCategory(categoryId, pageable);
-            model.addAttribute("keyword", "");
-        } else {
-            todoPage = todoService.findAll(pageable);
-            model.addAttribute("keyword", "");
-        }
-        for (Todo todo : todoPage.getContent()) {
+        String dirValue = "asc".equalsIgnoreCase(dir) ? "asc" : "desc";
+        String keywordValue = StringUtils.hasText(keyword) ? keyword.trim() : "";
+        List<Todo> todos = todoService.findByUserWithFilters(user, keywordValue, categoryId, sortKey, dirValue, page, pageSize);
+        long total = todoService.countByUserWithFilters(user, keywordValue, categoryId);
+
+        for (Todo todo : todos) {
             if (todo.getPriority() == null) {
                 todo.setPriority(Priority.MEDIUM);
             }
         }
-        model.addAttribute("todos", todoPage.getContent());
-        model.addAttribute("page", todoPage);
-        model.addAttribute("resultCount", todoPage.getTotalElements());
-        long total = todoPage.getTotalElements();
-        int numberOfElements = todoPage.getNumberOfElements();
-        long start = total == 0 ? 0 : (long) todoPage.getNumber() * todoPage.getSize() + 1;
-        long end = total == 0 ? 0 : (long) todoPage.getNumber() * todoPage.getSize() + numberOfElements;
+        int totalPages = total == 0 ? 1 : (int) Math.ceil((double) total / pageSize);
+        int safePage = Math.max(page, 0);
+        long start = total == 0 ? 0 : (long) safePage * pageSize + 1;
+        long end = total == 0 ? 0 : Math.min(total, (long) safePage * pageSize + todos.size());
+        PageInfo pageInfo = new PageInfo(safePage, totalPages);
+
+        model.addAttribute("todos", todos);
+        model.addAttribute("page", pageInfo);
+        model.addAttribute("resultCount", total);
         model.addAttribute("resultStart", start);
         model.addAttribute("resultEnd", end);
         model.addAttribute("sort", sortKey);
-        model.addAttribute("dir", direction.name().toLowerCase());
+        model.addAttribute("dir", dirValue);
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("categoryId", categoryId);
+        model.addAttribute("keyword", keywordValue);
+        model.addAttribute("username", principal.getUsername());
         return "todo/list";
     }
 
@@ -98,22 +96,26 @@ public class TodoController {
     }
 
     @GetMapping("/todos/new")
-    public String newTodo(Model model) {
-        model.addAttribute("todoForm", new TodoForm());
+    public String newTodo(@AuthenticationPrincipal UserDetails principal, Model model) {
+        TodoForm form = new TodoForm();
+        if (principal != null) {
+            form.setAuthor(principal.getUsername());
+        }
+        model.addAttribute("todoForm", form);
         model.addAttribute("categories", categoryService.findAll());
         return "todo/form";
     }
 
     @GetMapping("/todos/{id}")
-    public String showTodo(@PathVariable Long id, Model model) {
-        var todo = todoService.findById(id);
+    public String showTodo(@PathVariable Long id, @AuthenticationPrincipal UserDetails principal, Model model) {
+        var todo = todoService.findById(id, requireUser(principal));
         model.addAttribute("todo", todo);
         return "todo/show";
     }
 
     @GetMapping("/todos/{id}/edit")
-    public String editTodo(@PathVariable Long id, Model model) {
-        var todo = todoService.findById(id);
+    public String editTodo(@PathVariable Long id, @AuthenticationPrincipal UserDetails principal, Model model) {
+        var todo = todoService.findById(id, requireUser(principal));
         model.addAttribute("todo", todo);
         model.addAttribute("categories", categoryService.findAll());
         return "todo/edit";
@@ -128,7 +130,7 @@ public class TodoController {
             model.addAttribute("categories", categoryService.findAll());
             return "todo/form";
         }
-        Category selectedCategory = categoryService.findById(todoForm.getCategoryId()).orElse(null);
+        Category selectedCategory = todoForm.getCategoryId() != null ? categoryService.findById(todoForm.getCategoryId()) : null;
         model.addAttribute("selectedCategory", selectedCategory);
         return "todo/confirm";
     }
@@ -138,6 +140,7 @@ public class TodoController {
             @Valid @ModelAttribute("todoForm") TodoForm todoForm,
             BindingResult bindingResult,
             Model model,
+            @AuthenticationPrincipal UserDetails principal,
             RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("categories", categoryService.findAll());
@@ -149,7 +152,8 @@ public class TodoController {
                 todoForm.getPriority(),
                 todoForm.getDueDate(),
                 todoForm.getCategoryId(),
-                todoForm.getAuthor()
+                principal != null ? principal.getUsername() : todoForm.getAuthor(),
+                requireUser(principal)
         );
         return "todo/complete";
     }
@@ -159,6 +163,7 @@ public class TodoController {
             @Valid @ModelAttribute("todoForm") TodoForm todoForm,
             BindingResult bindingResult,
             Model model,
+            @AuthenticationPrincipal UserDetails principal,
             RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("categories", categoryService.findAll());
@@ -170,7 +175,8 @@ public class TodoController {
                 todoForm.getPriority(),
                 todoForm.getDueDate(),
                 todoForm.getCategoryId(),
-                todoForm.getAuthor()
+                principal != null ? principal.getUsername() : todoForm.getAuthor(),
+                requireUser(principal)
         );
         redirectAttributes.addFlashAttribute("message", "登録が完了しました");
         redirectAttributes.addFlashAttribute("messageType", "success");
@@ -182,21 +188,14 @@ public class TodoController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false, defaultValue = "createdAt") String sort,
-            @RequestParam(required = false, defaultValue = "desc") String dir) {
+            @RequestParam(required = false, defaultValue = "desc") String dir,
+            @AuthenticationPrincipal UserDetails principal) {
         String sortKey = normalizeSortKey(sort);
-        Sort.Direction direction = "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Sort sortSpec = Sort.by(direction, sortKey);
+        String dirValue = "asc".equalsIgnoreCase(dir) ? "asc" : "desc";
+        User user = requireUser(principal);
 
-        List<Todo> todos;
-        if (StringUtils.hasText(keyword) && categoryId != null) {
-            todos = todoService.searchByTitleAndCategory(keyword.trim(), categoryId, sortSpec);
-        } else if (StringUtils.hasText(keyword)) {
-            todos = todoService.searchByTitle(keyword.trim(), sortSpec);
-        } else if (categoryId != null) {
-            todos = todoService.findByCategory(categoryId, sortSpec);
-        } else {
-            todos = todoService.findAll(sortSpec);
-        }
+        String keywordValue = StringUtils.hasText(keyword) ? keyword.trim() : "";
+        List<Todo> todos = todoService.findByUserWithFiltersNoPaging(user, keywordValue, categoryId, sortKey, dirValue);
 
         StringBuilder sb = new StringBuilder();
         sb.append("\uFEFF");
@@ -255,24 +254,25 @@ public class TodoController {
             @RequestParam(required = false) Priority priority,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) java.time.LocalDate dueDate,
+            @AuthenticationPrincipal UserDetails principal,
             RedirectAttributes redirectAttributes) {
 
-        todoService.update(id, title, description, priority, dueDate, categoryId);
+        todoService.update(id, title, description, priority, dueDate, categoryId, requireUser(principal));
         redirectAttributes.addFlashAttribute("message", "更新が完了しました");
         return "redirect:/todos";
     }
 
     @PostMapping("/todos/{id}/delete")
-    public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        todoService.delete(id);
+    public String delete(@PathVariable Long id, @AuthenticationPrincipal UserDetails principal, RedirectAttributes redirectAttributes) {
+        todoService.delete(id, requireUser(principal));
         redirectAttributes.addFlashAttribute("message", "ToDoを削除しました");
         redirectAttributes.addFlashAttribute("messageType", "success");
         return "redirect:/todos";
     }
 
     @PostMapping("/todos/bulk-delete")
-    public String bulkDelete(@RequestParam(required = false) List<Long> ids, RedirectAttributes redirectAttributes) {
-        todoService.deleteAllByIds(ids);
+    public String bulkDelete(@RequestParam(required = false) List<Long> ids, @AuthenticationPrincipal UserDetails principal, RedirectAttributes redirectAttributes) {
+        todoService.deleteAllByIds(ids, requireUser(principal));
         if (ids == null || ids.isEmpty()) {
             redirectAttributes.addFlashAttribute("message", "削除する項目が選択されていません");
             redirectAttributes.addFlashAttribute("messageType", "warning");
@@ -284,8 +284,8 @@ public class TodoController {
     }
 
     @PostMapping("/todos/{id}/toggle")
-    public Object toggle(@PathVariable Long id, HttpServletRequest request, RedirectAttributes redirectAttributes) {
-        var updated = todoService.toggleCompleted(id);
+    public Object toggle(@PathVariable Long id, @AuthenticationPrincipal UserDetails principal, HttpServletRequest request, RedirectAttributes redirectAttributes) {
+        var updated = todoService.toggleCompleted(id, requireUser(principal));
         String requestedWith = request.getHeader("X-Requested-With");
         if ("XMLHttpRequest".equalsIgnoreCase(requestedWith)) {
             return ResponseEntity.ok().body(java.util.Map.of(
@@ -312,6 +312,12 @@ public class TodoController {
         return "redirect:/todos";
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public String handleAccessDenied(AccessDeniedException ex) {
+        return "error/403";
+    }
+
     private String normalizeSortKey(String sort) {
         if ("title".equalsIgnoreCase(sort)) {
             return "title";
@@ -326,6 +332,43 @@ public class TodoController {
             return "completed";
         }
         return "createdAt";
+    }
+
+    private User requireUser(UserDetails principal) {
+        if (principal == null) {
+            throw new org.springframework.security.access.AccessDeniedException("Forbidden");
+        }
+        User user = userMapper.findByUsername(principal.getUsername());
+        if (user == null) {
+            throw new org.springframework.security.access.AccessDeniedException("Forbidden");
+        }
+        return user;
+    }
+
+    private static class PageInfo {
+        private final int number;
+        private final int totalPages;
+
+        PageInfo(int number, int totalPages) {
+            this.number = number;
+            this.totalPages = totalPages;
+        }
+
+        public int getNumber() {
+            return number;
+        }
+
+        public int getTotalPages() {
+            return totalPages;
+        }
+
+        public boolean isFirst() {
+            return number <= 0;
+        }
+
+        public boolean isLast() {
+            return number >= totalPages - 1;
+        }
     }
 }
 

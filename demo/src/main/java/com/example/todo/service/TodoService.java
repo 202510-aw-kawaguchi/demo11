@@ -1,29 +1,27 @@
 ﻿package com.example.todo.service;
 
-import com.example.todo.entity.Todo;
-import com.example.todo.entity.Priority;
 import com.example.todo.entity.Category;
+import com.example.todo.entity.Priority;
+import com.example.todo.entity.Todo;
+import com.example.todo.entity.User;
 import com.example.todo.exception.TodoNotFoundException;
-import com.example.todo.repository.TodoRepository;
-import com.example.todo.repository.CategoryRepository;
+import com.example.todo.mapper.CategoryMapper;
+import com.example.todo.mapper.TodoMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Collection;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class TodoService {
 
-    private final TodoRepository todoRepository;
-    private final CategoryRepository categoryRepository;
+    private final TodoMapper todoMapper;
+    private final CategoryMapper categoryMapper;
 
-    public Todo create(String title, String description, Priority priority, LocalDate dueDate, Long categoryId, String author) {
+    public Todo create(String title, String description, Priority priority, LocalDate dueDate, Long categoryId, String author, User user) {
         Todo todo = new Todo();
         todo.setTitle(title);
         todo.setAuthor(author);
@@ -31,98 +29,78 @@ public class TodoService {
         todo.setPriority(priority != null ? priority : Priority.MEDIUM);
         todo.setDueDate(dueDate);
         todo.setCategory(resolveCategory(categoryId));
-        return todoRepository.save(todo);
+        todo.setUser(user);
+        todo.setCompleted(false);
+        todoMapper.insert(todo);
+        return todo;
     }
 
-    public List<Todo> findAll() {
-        return todoRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    public List<Todo> findByUserWithFilters(User user, String keyword, Long categoryId, String sort, String dir, int page, int size) {
+        int offset = Math.max(page, 0) * size;
+        return todoMapper.findByUserWithFilters(user.getId(), keyword, categoryId, sort, dir, size, offset);
     }
 
-    public List<Todo> findAll(Sort sort) {
-        return todoRepository.findAll(sort);
+    public List<Todo> findByUserWithFiltersNoPaging(User user, String keyword, Long categoryId, String sort, String dir) {
+        return todoMapper.findByUserWithFiltersNoPaging(user.getId(), keyword, categoryId, sort, dir);
     }
 
-    public Page<Todo> findAll(Pageable pageable) {
-        return todoRepository.findAll(pageable);
+    public long countByUserWithFilters(User user, String keyword, Long categoryId) {
+        return todoMapper.countByUserWithFilters(user.getId(), keyword, categoryId);
     }
 
-    public List<Todo> searchByTitle(String keyword) {
-        return todoRepository.findByTitleContaining(keyword, Sort.by(Sort.Direction.DESC, "createdAt"));
-    }
-
-    public List<Todo> searchByTitle(String keyword, Sort sort) {
-        return todoRepository.findByTitleContaining(keyword, sort);
-    }
-
-    public Page<Todo> searchByTitle(String keyword, Pageable pageable) {
-        return todoRepository.findByTitleContaining(keyword, pageable);
-    }
-
-    public Page<Todo> findByCategory(Long categoryId, Pageable pageable) {
-        return todoRepository.findByCategoryId(categoryId, pageable);
-    }
-
-    public Page<Todo> searchByTitleAndCategory(String keyword, Long categoryId, Pageable pageable) {
-        return todoRepository.findByTitleContainingAndCategoryId(keyword, categoryId, pageable);
-    }
-
-    public List<Todo> findByCategory(Long categoryId, Sort sort) {
-        return todoRepository.findByCategoryId(categoryId, sort);
-    }
-
-    public List<Todo> searchByTitleAndCategory(String keyword, Long categoryId, Sort sort) {
-        return todoRepository.findByTitleContainingAndCategoryId(keyword, categoryId, sort);
-    }
-
-    public List<Todo> findByCompleted(boolean completed) {
-        return todoRepository.findByCompleted(completed);
-    }
-
-    public Todo findById(Long id) {
-        return todoRepository.findById(id)
-                .orElseThrow(() -> new TodoNotFoundException(id));
+    public Todo findById(Long id, User user) {
+        return getOwnedTodo(id, user);
     }
 
     @Transactional
-    public Todo toggleCompleted(Long id) {
-        Todo todo = findById(id);
+    public Todo toggleCompleted(Long id, User user) {
+        Todo todo = getOwnedTodo(id, user);
+        todoMapper.toggleCompleted(id, user.getId());
         todo.setCompleted(!Boolean.TRUE.equals(todo.getCompleted()));
-        return todoRepository.save(todo);
+        return todo;
     }
 
     @Transactional
-    public Todo update(Long id, String title, String description, Priority priority, LocalDate dueDate, Long categoryId) {
-        Todo todo = findById(id);
+    public Todo update(Long id, String title, String description, Priority priority, LocalDate dueDate, Long categoryId, User user) {
+        Todo todo = getOwnedTodo(id, user);
         todo.setTitle(title);
         todo.setDescription(description);
         todo.setPriority(priority != null ? priority : Priority.MEDIUM);
         todo.setDueDate(dueDate);
         todo.setCategory(resolveCategory(categoryId));
-        return todoRepository.save(todo);
+        todoMapper.update(todo);
+        return todo;
     }
 
     @Transactional
-    public void delete(Long id) {
-        if (!todoRepository.existsById(id)) {
-            throw new IllegalArgumentException("指定されたToDoが見つかりません: " + id);
-        }
-        todoRepository.deleteById(id);
+    public void delete(Long id, User user) {
+        Todo todo = getOwnedTodo(id, user);
+        todoMapper.deleteByIdAndUser(todo.getId(), user.getId());
     }
 
     @Transactional
-    public void deleteAllByIds(Collection<Long> ids) {
+    public void deleteAllByIds(Collection<Long> ids, User user) {
         if (ids == null || ids.isEmpty()) {
             return;
         }
-        todoRepository.deleteByIdIn(ids);
+        todoMapper.deleteByIdsAndUser(List.copyOf(ids), user.getId());
     }
 
     private Category resolveCategory(Long categoryId) {
         if (categoryId == null) {
             return null;
         }
-        return categoryRepository.findById(categoryId).orElse(null);
+        return categoryMapper.findById(categoryId);
+    }
+
+    private Todo getOwnedTodo(Long id, User user) {
+        Todo todo = todoMapper.findById(id);
+        if (todo == null) {
+            throw new TodoNotFoundException(id);
+        }
+        if (todo.getUser() == null || !todo.getUser().getId().equals(user.getId())) {
+            throw new org.springframework.security.access.AccessDeniedException("Forbidden");
+        }
+        return todo;
     }
 }
-
-

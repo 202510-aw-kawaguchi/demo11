@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
     <meta charset="UTF-8">
@@ -19,6 +19,10 @@
         <div class="container">
             <span class="navbar-brand fw-bold">ToDoアプリ</span>
             <span class="navbar-text small text-muted">一覧</span>
+            <span class="ms-3 small" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>さん、こんにちは！
+            </span>
+            <span class="ms-2 badge text-bg-dark" sec:authorize="hasRole('ADMIN')">ADMIN</span>
             <form th:action="@{/logout}" method="post" class="ms-auto">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <button type="submit" class="btn btn-sm btn-outline-secondary">ログアウト</button>
@@ -31,7 +35,7 @@
             <h1 class="h4 mb-0">ToDo一覧</h1>
             <div class="d-flex gap-2">
                 <a class="btn btn-outline-secondary"
-                   th:href="@{/todos/export(keyword=${keyword},categoryId=${categoryId},sort=${sort},dir=${dir})}">
+                    th:href="@{/todos/export(keyword=${keyword},categoryId=${categoryId},sort=${sort},dir=${dir})}">
                     CSVダウンロード
                 </a>
                 <a class="btn btn-primary" th:href="@{/todos/new}">新規作成</a>
@@ -39,8 +43,7 @@
         </div>
         <form class="row g-2 align-items-center mb-3" th:action="@{/todos}" method="get">
             <div class="col-sm-6 col-md-5">
-                <input type="text" class="form-control" name="keyword" placeholder="タイトルで検索"
-                    th:value="${keyword}">
+                <input type="text" class="form-control" name="keyword" placeholder="タイトルで検索" th:value="${keyword}">
             </div>
             <div class="col-sm-4 col-md-3">
                 <select class="form-select" name="categoryId">
@@ -85,139 +88,152 @@
                             </button>
                         </div>
                         <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th scope="col" class="ps-3" style="width: 72px;">
-                                    <div class="d-flex align-items-center gap-1">
-                                        <input type="checkbox" class="form-check-input border border-secondary"
-                                            id="selectAll" style="width: 1.05rem; height: 1.05rem;">
-                                        <span class="small text-muted text-nowrap">全選択</span>
-                                    </div>
-                                </th>
-                                <th scope="col" class="ps-3">
-                                    <a class="text-decoration-none text-dark"
-                                       th:href="@{/todos(sort='title',dir=${sort == 'title' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
-                                        タイトル
-                                        <span class="ms-1">
-                                            <span th:classappend="${sort == 'title' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
-                                            <span th:classappend="${sort == 'title' and dir == 'desc'} ? 'text-dark' : 'text-muted'">▼</span>
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col" class="ps-3" style="width: 72px;">
+                                        <div class="d-flex align-items-center gap-1">
+                                            <input type="checkbox" class="form-check-input border border-secondary"
+                                                id="selectAll" style="width: 1.05rem; height: 1.05rem;">
+                                            <span class="small text-muted text-nowrap">全選択</span>
+                                        </div>
+                                    </th>
+                                    <th scope="col" class="ps-3">
+                                        <a class="text-decoration-none text-dark"
+                                            th:href="@{/todos(sort='title',dir=${sort == 'title' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
+                                            タイトル
+                                            <span class="ms-1">
+                                                <span
+                                                    th:classappend="${sort == 'title' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
+                                                <span
+                                                    th:classappend="${sort == 'title' and dir == 'desc'} ? 'text-dark' : 'text-muted'">▼</span>
+                                            </span>
+                                        </a>
+                                    </th>
+                                    <th scope="col">カテゴリ</th>
+                                    <th scope="col">
+                                        <a class="text-decoration-none text-dark"
+                                            th:href="@{/todos(sort='createdAt',dir=${sort == 'createdAt' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
+                                            作成日
+                                            <span class="ms-1">
+                                                <span
+                                                    th:classappend="${sort == 'createdAt' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
+                                                <span
+                                                    th:classappend="${sort == 'createdAt' and dir == 'desc'} ? 'text-dark' : 'text-muted'">▼</span>
+                                            </span>
+                                        </a>
+                                    </th>
+                                    <th scope="col">
+                                        <a class="text-decoration-none text-dark"
+                                            th:href="@{/todos(sort='dueDate',dir=${sort == 'dueDate' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
+                                            期限日
+                                            <span class="ms-1">
+                                                <span
+                                                    th:classappend="${sort == 'dueDate' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
+                                                <span
+                                                    th:classappend="${sort == 'dueDate' and dir == 'desc'} ? 'text-dark' : 'text-muted'">▼</span>
+                                            </span>
+                                        </a>
+                                    </th>
+                                    <th scope="col">
+                                        <a class="text-decoration-none text-dark"
+                                            th:href="@{/todos(sort='priority',dir=${sort == 'priority' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
+                                            優先度
+                                            <span class="ms-1">
+                                                <span
+                                                    th:classappend="${sort == 'priority' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
+                                                <span
+                                                    th:classappend="${sort == 'priority' and dir == 'desc'} ? 'text-dark' : 'text-muted'">▼</span>
+                                            </span>
+                                        </a>
+                                    </th>
+                                    <th scope="col">
+                                        <a class="text-decoration-none text-dark"
+                                            th:href="@{/todos(sort='completed',dir=${sort == 'completed' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
+                                            状態
+                                            <span class="ms-1">
+                                                <span
+                                                    th:classappend="${sort == 'completed' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
+                                                <span
+                                                    th:classappend="${sort == 'completed' and dir == 'desc'} ? 'text-dark' : 'text-muted'">▼</span>
+                                            </span>
+                                        </a>
+                                    </th>
+                                    <th scope="col" class="text-end pe-3">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="todo : ${todos}">
+                                    <td class="ps-3">
+                                        <div class="d-flex align-items-center">
+                                            <input type="checkbox"
+                                                class="form-check-input row-check border border-secondary" name="ids"
+                                                th:value="${todo.id}" style="width: 1.05rem; height: 1.05rem;">
+                                        </div>
+                                    </td>
+                                    <!-- 完了タスクは文字色を薄くし、打ち消し線 -->
+                                    <td class="ps-3"
+                                        th:classappend="${todo.completed} ? 'text-decoration-line-through text-muted'">
+                                        <span th:text="${todo.title}">サンプルタスク</span>
+                                    </td>
+                                    <td>
+                                        <span th:if="${todo.category != null}" class="badge text-white"
+                                            th:text="${todo.category.name}"
+                                            th:style="'background-color:' + ${todo.category.color}">カテゴリ</span>
+                                        <span th:if="${todo.category == null}" class="text-muted">未設定</span>
+                                    </td>
+                                    <td>
+                                        <span th:if="${todo.createdAt != null}"
+                                            th:text="${#temporals.format(todo.createdAt, 'yyyy/MM/dd HH:mm')}">2026/02/06
+                                            10:30</span>
+                                        <span th:if="${todo.createdAt == null}" class="text-muted">-</span>
+                                    </td>
+                                    <td>
+                                        <span th:if="${todo.dueDate != null}" class="px-2 py-1 rounded"
+                                            th:classappend="${todo.dueDate.isBefore(T(java.time.LocalDate).now())} ? 'text-danger bg-danger-subtle' : (${!todo.dueDate.isBefore(T(java.time.LocalDate).now()) and !todo.dueDate.isAfter(T(java.time.LocalDate).now().plusDays(3))} ? 'text-warning bg-warning-subtle' : '')"
+                                            th:text="${#temporals.format(todo.dueDate, 'yyyy/MM/dd')}">2026/02/05</span>
+                                        <span th:if="${todo.dueDate == null}" class="text-muted">未設定</span>
+                                    </td>
+                                    <td>
+                                        <span th:switch="${todo.priority != null ? todo.priority.toString() : ''}">
+                                            <span th:case="'HIGH'" class="badge text-bg-danger">高</span>
+                                            <span th:case="'MEDIUM'" class="badge text-bg-warning">中</span>
+                                            <span th:case="'LOW'" class="badge text-bg-success">低</span>
+                                            <span th:case="*" class="badge text-bg-secondary">未設定</span>
                                         </span>
-                                    </a>
-                                </th>
-                                <th scope="col">カテゴリ</th>
-                                <th scope="col">
-                                    <a class="text-decoration-none text-dark"
-                                       th:href="@{/todos(sort='createdAt',dir=${sort == 'createdAt' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
-                                        作成日
-                                        <span class="ms-1">
-                                            <span th:classappend="${sort == 'createdAt' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
-                                            <span th:classappend="${sort == 'createdAt' and dir == 'desc'} ? 'text-dark' : 'text-muted'">▼</span>
-                                        </span>
-                                    </a>
-                                </th>
-                                <th scope="col">
-                                    <a class="text-decoration-none text-dark"
-                                       th:href="@{/todos(sort='dueDate',dir=${sort == 'dueDate' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
-                                        期限日
-                                        <span class="ms-1">
-                                            <span th:classappend="${sort == 'dueDate' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
-                                            <span th:classappend="${sort == 'dueDate' and dir == 'desc'} ? 'text-dark' : 'text-muted'">▼</span>
-                                        </span>
-                                    </a>
-                                </th>
-                                <th scope="col">
-                                    <a class="text-decoration-none text-dark"
-                                       th:href="@{/todos(sort='priority',dir=${sort == 'priority' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
-                                        優先度
-                                        <span class="ms-1">
-                                            <span th:classappend="${sort == 'priority' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
-                                            <span th:classappend="${sort == 'priority' and dir == 'desc'} ? 'text-dark' : 'text-muted'">▼</span>
-                                        </span>
-                                    </a>
-                                </th>
-                                <th scope="col">
-                                    <a class="text-decoration-none text-dark"
-                                       th:href="@{/todos(sort='completed',dir=${sort == 'completed' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
-                                        状態
-                                        <span class="ms-1">
-                                            <span th:classappend="${sort == 'completed' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
-                                            <span th:classappend="${sort == 'completed' and dir == 'desc'} ? 'text-dark' : 'text-muted'">▼</span>
-                                        </span>
-                                    </a>
-                                </th>
-                                <th scope="col" class="text-end pe-3">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="todo : ${todos}">
-                                <td class="ps-3">
-                                    <div class="d-flex align-items-center">
-                                        <input type="checkbox" class="form-check-input row-check border border-secondary"
-                                            name="ids" th:value="${todo.id}" style="width: 1.05rem; height: 1.05rem;">
-                                    </div>
-                                </td>
-                                <!-- 完了タスクは文字色を薄くし、打ち消し線 -->
-                                <td class="ps-3"
-                                    th:classappend="${todo.completed} ? 'text-decoration-line-through text-muted'">
-                                    <span th:text="${todo.title}">サンプルタスク</span>
-                                </td>
-                                <td>
-                                    <span th:if="${todo.category != null}" class="badge text-white"
-                                        th:text="${todo.category.name}"
-                                        th:style="'background-color:' + ${todo.category.color}">カテゴリ</span>
-                                    <span th:if="${todo.category == null}" class="text-muted">未設定</span>
-                                </td>
-                                <td>
-                                    <span th:if="${todo.createdAt != null}"
-                                        th:text="${#temporals.format(todo.createdAt, 'yyyy/MM/dd HH:mm')}">2026/02/06 10:30</span>
-                                    <span th:if="${todo.createdAt == null}" class="text-muted">-</span>
-                                </td>
-                                <td>
-                                    <span th:if="${todo.dueDate != null}"
-                                        class="px-2 py-1 rounded"
-                                        th:classappend="${todo.dueDate.isBefore(T(java.time.LocalDate).now())} ? 'text-danger bg-danger-subtle' : (${!todo.dueDate.isBefore(T(java.time.LocalDate).now()) and !todo.dueDate.isAfter(T(java.time.LocalDate).now().plusDays(3))} ? 'text-warning bg-warning-subtle' : '')"
-                                        th:text="${#temporals.format(todo.dueDate, 'yyyy/MM/dd')}">2026/02/05</span>
-                                    <span th:if="${todo.dueDate == null}" class="text-muted">未設定</span>
-                                </td>
-                                <td>
-                                    <span th:switch="${todo.priority != null ? todo.priority.toString() : ''}">
-                                        <span th:case="'HIGH'" class="badge text-bg-danger">高</span>
-                                        <span th:case="'MEDIUM'" class="badge text-bg-warning">中</span>
-                                        <span th:case="'LOW'" class="badge text-bg-success">低</span>
-                                        <span th:case="*" class="badge text-bg-secondary">未設定</span>
-                                    </span>
-                                </td>
-                                <!-- 完了/未完了ボタン -->
-                                <td>
-                                    <form th:action="@{/todos/{id}/toggle(id=${todo.id})}" method="post"
-                                        class="d-inline">
-                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                                        <button type="submit"
-                                            th:class="${todo.completed} ? 'btn btn-sm btn-outline-secondary' : 'btn btn-sm btn-success'">
-                                            <span th:if="${todo.completed}">未完了に戻す</span>
-                                            <span th:unless="${todo.completed}">完了にする</span>
-                                        </button>
-                                    </form>
-                                </td>
-                                <td class="text-end pe-3" style="white-space: nowrap;">
-                                    <div class="d-flex justify-content-end gap-2 flex-nowrap">
-                                        <a class="btn btn-sm btn-outline-secondary text-nowrap"
-                                            th:href="@{/todos/{id}(id=${todo.id})}">詳細</a>
-                                        <a class="btn btn-sm btn-outline-primary text-nowrap"
-                                            th:href="@{/todos/{id}/edit(id=${todo.id})}">編集</a>
-                                    <form th:action="@{/todos/{id}/delete(id=${todo.id})}" method="post"
-                                        class="d-inline delete-form">
-                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                                        <button type="button" class="btn btn-sm btn-outline-danger text-nowrap"
-                                            data-bs-toggle="modal" data-bs-target="#deleteConfirmModal"
-                                            th:attr="data-delete-action=@{/todos/{id}/delete(id=${todo.id})}">
-                                            削除
-                                        </button>
-                                    </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
+                                    </td>
+                                    <!-- 完了/未完了ボタン -->
+                                    <td>
+                                        <form th:action="@{/todos/{id}/toggle(id=${todo.id})}" method="post"
+                                            class="d-inline">
+                                            <input type="hidden" th:name="${_csrf.parameterName}"
+                                                th:value="${_csrf.token}">
+                                            <button type="submit"
+                                                th:class="${todo.completed} ? 'btn btn-sm btn-outline-secondary' : 'btn btn-sm btn-success'">
+                                                <span th:if="${todo.completed}">未完了に戻す</span>
+                                                <span th:unless="${todo.completed}">完了にする</span>
+                                            </button>
+                                        </form>
+                                    </td>
+                                    <td class="text-end pe-3" style="white-space: nowrap;">
+                                        <div class="d-flex justify-content-end gap-2 flex-nowrap">
+                                            <a class="btn btn-sm btn-outline-secondary text-nowrap"
+                                                th:href="@{/todos/{id}(id=${todo.id})}">詳細</a>
+                                            <a class="btn btn-sm btn-outline-primary text-nowrap"
+                                                th:href="@{/todos/{id}/edit(id=${todo.id})}">編集</a>
+                                            <form th:action="@{/todos/{id}/delete(id=${todo.id})}" method="post"
+                                                class="d-inline delete-form">
+                                                <input type="hidden" th:name="${_csrf.parameterName}"
+                                                    th:value="${_csrf.token}">
+                                                <button type="button" class="btn btn-sm btn-outline-danger text-nowrap"
+                                                    data-bs-toggle="modal" data-bs-target="#deleteConfirmModal"
+                                                    th:attr="data-delete-action=@{/todos/{id}/delete(id=${todo.id})}">
+                                                    削除
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
                         </table>
                     </form>
                 </div>
@@ -242,18 +258,17 @@
             <ul class="pagination justify-content-center">
                 <li class="page-item" th:classappend="${page.first} ? 'disabled'">
                     <a class="page-link"
-                       th:href="@{/todos(page=${page.number - 1},sort=${sort},dir=${dir},keyword=${keyword},categoryId=${categoryId})}">前へ</a>
+                        th:href="@{/todos(page=${page.number - 1},sort=${sort},dir=${dir},keyword=${keyword},categoryId=${categoryId})}">前へ</a>
                 </li>
-                <li class="page-item"
-                    th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+                <li class="page-item" th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
                     th:classappend="${i == page.number} ? 'active'">
                     <a class="page-link"
-                       th:href="@{/todos(page=${i},sort=${sort},dir=${dir},keyword=${keyword},categoryId=${categoryId})}"
-                       th:text="${i + 1}">1</a>
+                        th:href="@{/todos(page=${i},sort=${sort},dir=${dir},keyword=${keyword},categoryId=${categoryId})}"
+                        th:text="${i + 1}">1</a>
                 </li>
                 <li class="page-item" th:classappend="${page.last} ? 'disabled'">
                     <a class="page-link"
-                       th:href="@{/todos(page=${page.number + 1},sort=${sort},dir=${dir},keyword=${keyword},categoryId=${categoryId})}">次へ</a>
+                        th:href="@{/todos(page=${page.number + 1},sort=${sort},dir=${dir},keyword=${keyword},categoryId=${categoryId})}">次へ</a>
                 </li>
             </ul>
         </nav>

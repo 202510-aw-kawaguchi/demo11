@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.todo.mapper.CategoryMapper">
+    <resultMap id="CategoryMap" type="com.example.todo.entity.Category">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="color" property="color"/>
+    </resultMap>
+
+    <select id="findAll" resultMap="CategoryMap">
+        SELECT id, name, color
+        FROM categories
+        ORDER BY name
+    </select>
+
+    <select id="findById" resultMap="CategoryMap">
+        SELECT id, name, color
+        FROM categories
+        WHERE id = #{id}
+    </select>
+</mapper>

@@ -28,8 +28,8 @@ import com.example.todo.entity.Category;
 import com.example.todo.entity.User;
 
 import com.example.demo.form.TodoForm;
-import com.example.todo.exception.TodoNotFoundException;
 import com.example.todo.service.CategoryService;
+import com.example.todo.service.TodoAttachmentService;
 import com.example.todo.service.TodoService;
 import com.example.todo.mapper.UserMapper;
 import java.util.List;
@@ -37,8 +37,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 
 @Controller
 @RequiredArgsConstructor
@@ -47,6 +48,7 @@ public class TodoController {
     private final TodoService todoService;
     private final CategoryService categoryService;
     private final UserMapper userMapper;
+    private final TodoAttachmentService todoAttachmentService;
 
     @GetMapping("/todos")
     public String list(
@@ -62,7 +64,8 @@ public class TodoController {
         String sortKey = normalizeSortKey(sort);
         String dirValue = "asc".equalsIgnoreCase(dir) ? "asc" : "desc";
         String keywordValue = StringUtils.hasText(keyword) ? keyword.trim() : "";
-        List<Todo> todos = todoService.findByUserWithFilters(user, keywordValue, categoryId, sortKey, dirValue, page, pageSize);
+        List<Todo> todos = todoService.findByUserWithFilters(user, keywordValue, categoryId, sortKey, dirValue, page,
+                pageSize);
         long total = todoService.countByUserWithFilters(user, keywordValue, categoryId);
 
         for (Todo todo : todos) {
@@ -115,6 +118,7 @@ public class TodoController {
     public String showTodo(@PathVariable Long id, @AuthenticationPrincipal UserDetails principal, Model model) {
         var todo = todoService.findById(id, requireUser(principal));
         model.addAttribute("todo", todo);
+        model.addAttribute("attachments", todoAttachmentService.findByTodoId(id));
         return "todo/show";
     }
 
@@ -123,7 +127,73 @@ public class TodoController {
         var todo = todoService.findById(id, requireUser(principal));
         model.addAttribute("todo", todo);
         model.addAttribute("categories", categoryService.findAll());
+        model.addAttribute("attachments", todoAttachmentService.findByTodoId(id));
         return "todo/edit";
+    }
+
+    @PostMapping("/todos/{id}/attachments")
+    public String uploadAttachment(@PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal UserDetails principal,
+            RedirectAttributes redirectAttributes) {
+        todoService.findById(id, requireUser(principal));
+        if (file == null || file.isEmpty()) {
+            redirectAttributes.addFlashAttribute("message", "ファイルを選択してください");
+            redirectAttributes.addFlashAttribute("messageType", "warning");
+            return "redirect:/todos/" + id + "/edit";
+        }
+        try {
+            todoAttachmentService.addAttachment(id, file);
+            redirectAttributes.addFlashAttribute("message", "ファイルをアップロードしました");
+            redirectAttributes.addFlashAttribute("messageType", "success");
+        } catch (IOException ex) {
+            redirectAttributes.addFlashAttribute("message", "ファイルの保存に失敗しました");
+            redirectAttributes.addFlashAttribute("messageType", "danger");
+        }
+        return "redirect:/todos/" + id + "/edit";
+    }
+
+    @GetMapping("/todos/{id}/attachments/{attachmentId}")
+    public ResponseEntity<byte[]> downloadAttachment(@PathVariable Long id,
+            @PathVariable Long attachmentId,
+            @AuthenticationPrincipal UserDetails principal) throws IOException {
+        todoService.findById(id, requireUser(principal));
+        var attachment = todoAttachmentService.findByIdAndTodoId(attachmentId, id);
+        if (attachment == null) {
+            return ResponseEntity.notFound().build();
+        }
+        byte[] bytes = todoAttachmentService.loadAttachmentBytes(attachment);
+        String contentType = attachment.getContentType() != null ? attachment.getContentType()
+                : "application/octet-stream";
+        String safeName = sanitizeFilename(attachment.getOriginalName());
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + safeName + "\"")
+                .body(bytes);
+    }
+
+    @PostMapping("/todos/{id}/attachments/{attachmentId}/delete")
+    public String deleteAttachment(@PathVariable Long id,
+            @PathVariable Long attachmentId,
+            @AuthenticationPrincipal UserDetails principal,
+            RedirectAttributes redirectAttributes) {
+        todoService.findById(id, requireUser(principal));
+        var attachment = todoAttachmentService.findByIdAndTodoId(attachmentId, id);
+        if (attachment == null) {
+            redirectAttributes.addFlashAttribute("message", "添付ファイルが見つかりません");
+            redirectAttributes.addFlashAttribute("messageType", "danger");
+            return "redirect:/todos/" + id + "/edit";
+        }
+        try {
+            todoAttachmentService.deleteAttachment(attachment);
+            redirectAttributes.addFlashAttribute("message", "添付ファイルを削除しました");
+            redirectAttributes.addFlashAttribute("messageType", "success");
+        } catch (IOException ex) {
+            redirectAttributes.addFlashAttribute("message", "添付ファイルの削除に失敗しました");
+            redirectAttributes.addFlashAttribute("messageType", "danger");
+        }
+        return "redirect:/todos/" + id + "/edit";
     }
 
     @PostMapping("/todos/confirm")
@@ -135,7 +205,9 @@ public class TodoController {
             model.addAttribute("categories", categoryService.findAll());
             return "todo/form";
         }
-        Category selectedCategory = todoForm.getCategoryId() != null ? categoryService.findById(todoForm.getCategoryId()) : null;
+        Category selectedCategory = todoForm.getCategoryId() != null
+                ? categoryService.findById(todoForm.getCategoryId())
+                : null;
         model.addAttribute("selectedCategory", selectedCategory);
         return "todo/confirm";
     }
@@ -158,8 +230,7 @@ public class TodoController {
                 todoForm.getDueDate(),
                 todoForm.getCategoryId(),
                 principal != null ? principal.getUsername() : todoForm.getAuthor(),
-                requireUser(principal)
-        );
+                requireUser(principal));
         return "todo/complete";
     }
 
@@ -181,8 +252,7 @@ public class TodoController {
                 todoForm.getDueDate(),
                 todoForm.getCategoryId(),
                 principal != null ? principal.getUsername() : todoForm.getAuthor(),
-                requireUser(principal)
-        );
+                requireUser(principal));
         redirectAttributes.addFlashAttribute("message", "登録が完了しました");
         redirectAttributes.addFlashAttribute("messageType", "success");
         return "redirect:/todos";
@@ -217,21 +287,21 @@ public class TodoController {
             String category = todo.getCategory() != null ? todo.getCategory().getName() : "";
             String priority = todo.getPriority() != null ? todo.getPriority().getLabel() : "";
             sb.append(csv(todo.getId() != null ? todo.getId().toString() : ""))
-              .append(",")
-              .append(csv(todo.getTitle()))
-              .append(",")
-              .append(csv(todo.getAuthor()))
-              .append(",")
-              .append(csv(category))
-              .append(",")
-              .append(csv(priority))
-              .append(",")
-              .append(csv(status))
-              .append(",")
-              .append(csv(createdAtExcel))
-              .append(",")
-              .append(csv(dueDateExcel))
-              .append("\n");
+                    .append(",")
+                    .append(csv(todo.getTitle()))
+                    .append(",")
+                    .append(csv(todo.getAuthor()))
+                    .append(",")
+                    .append(csv(category))
+                    .append(",")
+                    .append(csv(priority))
+                    .append(",")
+                    .append(csv(status))
+                    .append(",")
+                    .append(csv(createdAtExcel))
+                    .append(",")
+                    .append(csv(dueDateExcel))
+                    .append("\n");
         }
 
         String filename = "todo_" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + ".csv";
@@ -268,7 +338,8 @@ public class TodoController {
     }
 
     @PostMapping("/todos/{id}/delete")
-    public String delete(@PathVariable Long id, @AuthenticationPrincipal UserDetails principal, RedirectAttributes redirectAttributes) {
+    public String delete(@PathVariable Long id, @AuthenticationPrincipal UserDetails principal,
+            RedirectAttributes redirectAttributes) {
         todoService.delete(id, requireUser(principal));
         redirectAttributes.addFlashAttribute("message", "ToDoを削除しました");
         redirectAttributes.addFlashAttribute("messageType", "success");
@@ -276,7 +347,8 @@ public class TodoController {
     }
 
     @PostMapping("/todos/bulk-delete")
-    public String bulkDelete(@RequestParam(required = false) List<Long> ids, @AuthenticationPrincipal UserDetails principal, RedirectAttributes redirectAttributes) {
+    public String bulkDelete(@RequestParam(required = false) List<Long> ids,
+            @AuthenticationPrincipal UserDetails principal, RedirectAttributes redirectAttributes) {
         todoService.deleteAllByIds(ids, requireUser(principal));
         if (ids == null || ids.isEmpty()) {
             redirectAttributes.addFlashAttribute("message", "削除する項目が選択されていません");
@@ -289,31 +361,17 @@ public class TodoController {
     }
 
     @PostMapping("/todos/{id}/toggle")
-    public Object toggle(@PathVariable Long id, @AuthenticationPrincipal UserDetails principal, HttpServletRequest request, RedirectAttributes redirectAttributes) {
+    public Object toggle(@PathVariable Long id, @AuthenticationPrincipal UserDetails principal,
+            HttpServletRequest request, RedirectAttributes redirectAttributes) {
         var updated = todoService.toggleCompleted(id, requireUser(principal));
         String requestedWith = request.getHeader("X-Requested-With");
         if ("XMLHttpRequest".equalsIgnoreCase(requestedWith)) {
             return ResponseEntity.ok().body(java.util.Map.of(
                     "id", updated.getId(),
-                    "completed", updated.getCompleted()
-            ));
+                    "completed", updated.getCompleted()));
         }
         redirectAttributes.addFlashAttribute("message", "完了状態を更新しました");
         redirectAttributes.addFlashAttribute("messageType", "success");
-        return "redirect:/todos";
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public String handleTodoNotFound(IllegalArgumentException ex, RedirectAttributes redirectAttributes) {
-        redirectAttributes.addFlashAttribute("error", "指定されたToDoが見つかりません");
-        redirectAttributes.addFlashAttribute("messageType", "danger");
-        return "redirect:/todos";
-    }
-
-    @ExceptionHandler(TodoNotFoundException.class)
-    public String handleTodoNotFound(TodoNotFoundException ex, RedirectAttributes redirectAttributes) {
-        redirectAttributes.addFlashAttribute("error", "指定されたToDoが見つかりません");
-        redirectAttributes.addFlashAttribute("messageType", "danger");
         return "redirect:/todos";
     }
 
@@ -350,6 +408,13 @@ public class TodoController {
         return user;
     }
 
+    private String sanitizeFilename(String name) {
+        if (name == null || name.isBlank()) {
+            return "file";
+        }
+        return name.replaceAll("[\\r\\n\\\"]", "_");
+    }
+
     @SuppressWarnings("unused")
     private static class PageInfo {
         private final int number;
@@ -377,6 +442,3 @@ public class TodoController {
         }
     }
 }
-
-
-

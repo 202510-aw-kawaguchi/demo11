@@ -13,15 +13,15 @@ public class TodoForm {
     private Long id;
     private Long version;
 
-    @NotBlank
-    @Size(max = 50)
+    @NotBlank(message = "{todo.author.required}")
+    @Size(max = 50, message = "{todo.author.size}")
     private String author;
 
-    @NotBlank
-    @Size(max = 100)
+    @NotBlank(message = "{todo.title.required}")
+    @Size(max = 100, message = "{todo.title.size}")
     private String title;
 
-    @Size(max = 500)
+    @Size(max = 500, message = "{todo.detail.size}")
     private String detail;
 
     private Long categoryId;

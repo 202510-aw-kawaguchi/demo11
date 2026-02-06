@@ -3,30 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ToDo登録完了</title>
+    <title th:text="#{app.title}">ToDo完了</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
     <header class="navbar navbar-expand-lg bg-white border-bottom">
         <div class="container">
-            <span class="navbar-brand fw-bold">ToDoアプリ</span>
-            <span class="navbar-text small text-muted">完了</span>
+            <span class="navbar-brand fw-bold" th:text="#{app.title}">ToDoアプリ</span>
+            <span class="navbar-text small text-muted" th:text="#{nav.complete}">完了</span>
+            <div class="ms-auto d-flex gap-2">
+                <a class="small text-decoration-none" th:href="@{?lang=ja}" th:text="#{lang.ja}">日本語</a>
+                <span class="text-muted small">|</span>
+                <a class="small text-decoration-none" th:href="@{?lang=en}" th:text="#{lang.en}">English</a>
+            </div>
         </div>
     </header>
 
     <main class="container py-4">
         <div class="card shadow-sm">
             <div class="card-body text-center py-5">
-                <h1 class="h4 mb-3">登録が完了しました</h1>
-                <p class="text-muted mb-4">ToDoの登録が完了しました。</p>
-                <a class="btn btn-primary" th:href="@{/todos}">一覧画面へ</a>
+                <h1 class="h4 mb-3" th:text="#{message.complete_title}">登録が完了しました</h1>
+                <p class="text-muted mb-4" th:text="#{message.complete_desc}">ToDoの登録が完了しました。</p>
+                <a class="btn btn-primary" th:href="@{/todos}" th:text="#{button.back_to_list}">一覧へ戻る</a>
             </div>
         </div>
     </main>
 
     <footer class="border-top bg-white py-3">
         <div class="container small text-muted">
-            <span>&copy; 2026 ToDoアプリ</span>
+            <span>&copy; 2026 ToDo</span>
         </div>
     </footer>
 </body>

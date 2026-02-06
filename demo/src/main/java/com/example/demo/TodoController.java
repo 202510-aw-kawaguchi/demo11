@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,6 +29,10 @@ import com.example.todo.exception.TodoNotFoundException;
 import com.example.todo.service.CategoryService;
 import com.example.todo.service.TodoService;
 import java.util.List;
+import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import lombok.RequiredArgsConstructor;
 
@@ -137,7 +143,14 @@ public class TodoController {
             model.addAttribute("categories", categoryService.findAll());
             return "todo/form";
         }
-        todoService.create(todoForm.getTitle(), todoForm.getDetail(), todoForm.getPriority(), todoForm.getDueDate(), todoForm.getCategoryId());
+        todoService.create(
+                todoForm.getTitle(),
+                todoForm.getDetail(),
+                todoForm.getPriority(),
+                todoForm.getDueDate(),
+                todoForm.getCategoryId(),
+                todoForm.getAuthor()
+        );
         return "todo/complete";
     }
 
@@ -151,10 +164,87 @@ public class TodoController {
             model.addAttribute("categories", categoryService.findAll());
             return "todo/form";
         }
-        todoService.create(todoForm.getTitle(), todoForm.getDetail(), todoForm.getPriority(), todoForm.getDueDate(), todoForm.getCategoryId());
+        todoService.create(
+                todoForm.getTitle(),
+                todoForm.getDetail(),
+                todoForm.getPriority(),
+                todoForm.getDueDate(),
+                todoForm.getCategoryId(),
+                todoForm.getAuthor()
+        );
         redirectAttributes.addFlashAttribute("message", "登録が完了しました");
         redirectAttributes.addFlashAttribute("messageType", "success");
         return "redirect:/todos";
+    }
+
+    @GetMapping("/todos/export")
+    public ResponseEntity<byte[]> exportCsv(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false, defaultValue = "createdAt") String sort,
+            @RequestParam(required = false, defaultValue = "desc") String dir) {
+        String sortKey = normalizeSortKey(sort);
+        Sort.Direction direction = "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort sortSpec = Sort.by(direction, sortKey);
+
+        List<Todo> todos;
+        if (StringUtils.hasText(keyword) && categoryId != null) {
+            todos = todoService.searchByTitleAndCategory(keyword.trim(), categoryId, sortSpec);
+        } else if (StringUtils.hasText(keyword)) {
+            todos = todoService.searchByTitle(keyword.trim(), sortSpec);
+        } else if (categoryId != null) {
+            todos = todoService.findByCategory(categoryId, sortSpec);
+        } else {
+            todos = todoService.findAll(sortSpec);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("\uFEFF");
+        sb.append("ID,タイトル,登録者,カテゴリ,優先度,ステータス,作成日,期限日\n");
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
+        DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+        for (Todo todo : todos) {
+            String status = Boolean.TRUE.equals(todo.getCompleted()) ? "完了" : "未完了";
+            LocalDateTime created = todo.getCreatedAt() != null ? todo.getCreatedAt() : todo.getUpdatedAt();
+            String createdAt = created != null ? created.format(dtf) : "";
+            String createdAtExcel = createdAt.isEmpty() ? "" : "=\"" + createdAt + "\"";
+            String dueDate = todo.getDueDate() != null ? todo.getDueDate().format(df) : "";
+            String dueDateExcel = dueDate.isEmpty() ? "" : "=\"" + dueDate + "\"";
+            String category = todo.getCategory() != null ? todo.getCategory().getName() : "";
+            String priority = todo.getPriority() != null ? todo.getPriority().getLabel() : "";
+            sb.append(csv(todo.getId() != null ? todo.getId().toString() : ""))
+              .append(",")
+              .append(csv(todo.getTitle()))
+              .append(",")
+              .append(csv(todo.getAuthor()))
+              .append(",")
+              .append(csv(category))
+              .append(",")
+              .append(csv(priority))
+              .append(",")
+              .append(csv(status))
+              .append(",")
+              .append(csv(createdAtExcel))
+              .append(",")
+              .append(csv(dueDateExcel))
+              .append("\n");
+        }
+
+        String filename = "todo_" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + ".csv";
+        byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/csv; charset=UTF-8"));
+        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
+        return ResponseEntity.ok().headers(headers).body(bytes);
+    }
+
+    private String csv(String value) {
+        if (value == null) {
+            return "";
+        }
+        boolean needQuote = value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r");
+        String escaped = value.replace("\"", "\"\"");
+        return needQuote ? "\"" + escaped + "\"" : escaped;
     }
 
     @PostMapping("/todos/{id}/update")

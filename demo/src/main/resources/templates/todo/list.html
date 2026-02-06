@@ -25,7 +25,13 @@
     <main class="container py-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h1 class="h4 mb-0">ToDo一覧</h1>
-            <a class="btn btn-primary" th:href="@{/todos/new}">新規作成</a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary"
+                   th:href="@{/todos/export(keyword=${keyword},categoryId=${categoryId},sort=${sort},dir=${dir})}">
+                    CSVダウンロード
+                </a>
+                <a class="btn btn-primary" th:href="@{/todos/new}">新規作成</a>
+            </div>
         </div>
         <form class="row g-2 align-items-center mb-3" th:action="@{/todos}" method="get">
             <div class="col-sm-6 col-md-5">

@@ -23,6 +23,8 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
     Page<Todo> findByTitleContaining(String keyword, Pageable pageable);
     Page<Todo> findByCategoryId(Long categoryId, Pageable pageable);
     Page<Todo> findByTitleContainingAndCategoryId(String keyword, Long categoryId, Pageable pageable);
+    List<Todo> findByCategoryId(Long categoryId, Sort sort);
+    List<Todo> findByTitleContainingAndCategoryId(String keyword, Long categoryId, Sort sort);
 
     void deleteByIdIn(Collection<Long> ids);
 

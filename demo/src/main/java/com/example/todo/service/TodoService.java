@@ -23,9 +23,10 @@ public class TodoService {
     private final TodoRepository todoRepository;
     private final CategoryRepository categoryRepository;
 
-    public Todo create(String title, String description, Priority priority, LocalDate dueDate, Long categoryId) {
+    public Todo create(String title, String description, Priority priority, LocalDate dueDate, Long categoryId, String author) {
         Todo todo = new Todo();
         todo.setTitle(title);
+        todo.setAuthor(author);
         todo.setDescription(description);
         todo.setPriority(priority != null ? priority : Priority.MEDIUM);
         todo.setDueDate(dueDate);
@@ -63,6 +64,14 @@ public class TodoService {
 
     public Page<Todo> searchByTitleAndCategory(String keyword, Long categoryId, Pageable pageable) {
         return todoRepository.findByTitleContainingAndCategoryId(keyword, categoryId, pageable);
+    }
+
+    public List<Todo> findByCategory(Long categoryId, Sort sort) {
+        return todoRepository.findByCategoryId(categoryId, sort);
+    }
+
+    public List<Todo> searchByTitleAndCategory(String keyword, Long categoryId, Sort sort) {
+        return todoRepository.findByTitleContainingAndCategoryId(keyword, categoryId, sort);
     }
 
     public List<Todo> findByCompleted(boolean completed) {

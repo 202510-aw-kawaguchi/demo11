@@ -19,6 +19,9 @@ public class Todo {
     @Column(nullable = false, length = 100)
     private String title;
 
+    @Column(length = 50)
+    private String author;
+
     @Column(length = 500)
     private String description;
 

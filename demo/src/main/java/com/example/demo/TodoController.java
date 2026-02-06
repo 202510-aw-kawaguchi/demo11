@@ -26,6 +26,7 @@ import com.example.demo.form.TodoForm;
 import com.example.todo.exception.TodoNotFoundException;
 import com.example.todo.service.CategoryService;
 import com.example.todo.service.TodoService;
+import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 
@@ -176,6 +177,19 @@ public class TodoController {
         todoService.delete(id);
         redirectAttributes.addFlashAttribute("message", "ToDoを削除しました");
         redirectAttributes.addFlashAttribute("messageType", "success");
+        return "redirect:/todos";
+    }
+
+    @PostMapping("/todos/bulk-delete")
+    public String bulkDelete(@RequestParam(required = false) List<Long> ids, RedirectAttributes redirectAttributes) {
+        todoService.deleteAllByIds(ids);
+        if (ids == null || ids.isEmpty()) {
+            redirectAttributes.addFlashAttribute("message", "削除する項目が選択されていません");
+            redirectAttributes.addFlashAttribute("messageType", "warning");
+        } else {
+            redirectAttributes.addFlashAttribute("message", "選択したToDoを削除しました");
+            redirectAttributes.addFlashAttribute("messageType", "success");
+        }
         return "redirect:/todos";
     }
 

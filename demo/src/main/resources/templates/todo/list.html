@@ -67,9 +67,22 @@
             <!-- データがある場合 -->
             <div class="card-body p-0" th:if="${!#lists.isEmpty(todos)}">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <form th:action="@{/todos/bulk-delete}" method="post" id="bulkDeleteForm">
+                        <div class="p-3 border-bottom d-flex align-items-center gap-2">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" id="bulkDeleteBtn">
+                                選択した項目を削除
+                            </button>
+                        </div>
+                        <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
+                                <th scope="col" class="ps-3" style="width: 72px;">
+                                    <div class="d-flex align-items-center gap-1">
+                                        <input type="checkbox" class="form-check-input border border-secondary"
+                                            id="selectAll" style="width: 1.05rem; height: 1.05rem;">
+                                        <span class="small text-muted text-nowrap">全選択</span>
+                                    </div>
+                                </th>
                                 <th scope="col" class="ps-3">
                                     <a class="text-decoration-none text-dark"
                                        th:href="@{/todos(sort='title',dir=${sort == 'title' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
@@ -126,6 +139,12 @@
                         </thead>
                         <tbody>
                             <tr th:each="todo : ${todos}">
+                                <td class="ps-3">
+                                    <div class="d-flex align-items-center">
+                                        <input type="checkbox" class="form-check-input row-check border border-secondary"
+                                            name="ids" th:value="${todo.id}" style="width: 1.05rem; height: 1.05rem;">
+                                    </div>
+                                </td>
                                 <!-- 完了タスクは文字色を薄くし、打ち消し線 -->
                                 <td class="ps-3"
                                     th:classappend="${todo.completed} ? 'text-decoration-line-through text-muted'">
@@ -186,7 +205,8 @@
                                 </td>
                             </tr>
                         </tbody>
-                    </table>
+                        </table>
+                    </form>
                 </div>
             </div>
 
@@ -278,6 +298,32 @@
             form.action = pendingDeleteAction;
             document.body.appendChild(form);
             form.submit();
+        });
+    </script>
+    <script>
+        const selectAll = document.getElementById('selectAll');
+        const rowChecks = () => document.querySelectorAll('.row-check');
+        selectAll?.addEventListener('change', function () {
+            rowChecks().forEach(cb => { cb.checked = selectAll.checked; });
+        });
+        document.addEventListener('change', function (event) {
+            if (event.target && event.target.classList.contains('row-check')) {
+                const all = rowChecks();
+                const checked = Array.from(all).filter(cb => cb.checked).length;
+                selectAll.checked = checked === all.length;
+                selectAll.indeterminate = checked > 0 && checked < all.length;
+            }
+        });
+        document.getElementById('bulkDeleteForm')?.addEventListener('submit', function (event) {
+            const checked = Array.from(rowChecks()).filter(cb => cb.checked);
+            if (checked.length === 0) {
+                event.preventDefault();
+                alert('削除する項目を選択してください');
+                return;
+            }
+            if (!confirm('本当に削除しますか？')) {
+                event.preventDefault();
+            }
         });
     </script>
 </body>

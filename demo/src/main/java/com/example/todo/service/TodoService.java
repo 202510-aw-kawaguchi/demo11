@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Collection;
 
 @Service
 @RequiredArgsConstructor
@@ -97,6 +98,14 @@ public class TodoService {
             throw new IllegalArgumentException("指定されたToDoが見つかりません: " + id);
         }
         todoRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void deleteAllByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        todoRepository.deleteByIdIn(ids);
     }
 
     private Category resolveCategory(Long categoryId) {

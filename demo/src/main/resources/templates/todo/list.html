@@ -34,6 +34,9 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h1 class="h4 mb-0">ToDo一覧</h1>
             <div class="d-flex gap-2">
+                <a class="btn btn-outline-dark" sec:authorize="hasRole('ADMIN')" th:href="@{/admin/users}">
+                    ユーザー管理
+                </a>
                 <a class="btn btn-outline-secondary"
                     th:href="@{/todos/export(keyword=${keyword},categoryId=${categoryId},sort=${sort},dir=${dir})}">
                     CSVダウンロード

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.todo.mapper.TodoEditLogMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO todo_edit_logs
+        (todo_id, admin_user_id, target_user_id,
+         before_title, after_title,
+         before_description, after_description,
+         before_priority, after_priority,
+         before_due_date, after_due_date,
+         before_category_id, after_category_id,
+         edited_at)
+        VALUES
+        (#{todoId}, #{adminUserId}, #{targetUserId},
+         #{beforeTitle}, #{afterTitle},
+         #{beforeDescription}, #{afterDescription},
+         #{beforePriority}, #{afterPriority},
+         #{beforeDueDate}, #{afterDueDate},
+         #{beforeCategoryId}, #{afterCategoryId},
+         CURRENT_TIMESTAMP)
+    </insert>
+</mapper>

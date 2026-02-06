@@ -8,16 +8,36 @@
         <result column="username" property="username"/>
         <result column="password" property="password"/>
         <result column="role" property="role"/>
+        <result column="enabled" property="enabled"/>
     </resultMap>
 
     <select id="findByUsername" resultMap="UserMap">
-        SELECT id, username, password, role
+        SELECT id, username, password, role, enabled
         FROM users
         WHERE username = #{username}
     </select>
 
+    <select id="findById" resultMap="UserMap">
+        SELECT id, username, password, role, enabled
+        FROM users
+        WHERE id = #{id}
+    </select>
+
+    <select id="findAll" resultMap="UserMap">
+        SELECT id, username, password, role, enabled
+        FROM users
+        ORDER BY id ASC
+    </select>
+
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO users (username, password, role)
-        VALUES (#{username}, #{password}, #{role})
+        INSERT INTO users (username, password, role, enabled)
+        VALUES (#{username}, #{password}, #{role}, #{enabled})
     </insert>
+
+    <update id="update">
+        UPDATE users
+        SET role = #{role},
+            enabled = #{enabled}
+        WHERE id = #{id}
+    </update>
 </mapper>

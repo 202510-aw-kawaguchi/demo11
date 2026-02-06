@@ -95,6 +95,11 @@ public class TodoController {
         return "redirect:/todos";
     }
 
+    @GetMapping("/todos/admin/users")
+    public String redirectAdminUsers() {
+        return "redirect:/admin/users";
+    }
+
     @GetMapping("/todos/new")
     public String newTodo(@AuthenticationPrincipal UserDetails principal, Model model) {
         TodoForm form = new TodoForm();
@@ -345,6 +350,7 @@ public class TodoController {
         return user;
     }
 
+    @SuppressWarnings("unused")
     private static class PageInfo {
         private final int number;
         private final int totalPages;

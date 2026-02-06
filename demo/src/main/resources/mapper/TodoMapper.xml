@@ -81,10 +81,69 @@
         </choose>
     </select>
 
+    <select id="findAllWithFilters" resultMap="TodoMap">
+        <include refid="BaseSelect"/>
+        WHERE 1=1
+        <if test="keyword != null and keyword != ''">
+            AND t.title LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        <if test="categoryId != null">
+            AND t.category_id = #{categoryId}
+        </if>
+        ORDER BY
+        <choose>
+            <when test="sort == 'title'">t.title</when>
+            <when test="sort == 'completed'">t.completed</when>
+            <when test="sort == 'priority'">t.priority</when>
+            <when test="sort == 'dueDate'">t.due_date</when>
+            <otherwise>t.created_at</otherwise>
+        </choose>
+        <choose>
+            <when test="dir == 'asc'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findAllWithFiltersNoPaging" resultMap="TodoMap">
+        <include refid="BaseSelect"/>
+        WHERE 1=1
+        <if test="keyword != null and keyword != ''">
+            AND t.title LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        <if test="categoryId != null">
+            AND t.category_id = #{categoryId}
+        </if>
+        ORDER BY
+        <choose>
+            <when test="sort == 'title'">t.title</when>
+            <when test="sort == 'completed'">t.completed</when>
+            <when test="sort == 'priority'">t.priority</when>
+            <when test="sort == 'dueDate'">t.due_date</when>
+            <otherwise>t.created_at</otherwise>
+        </choose>
+        <choose>
+            <when test="dir == 'asc'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+    </select>
+
     <select id="countByUserWithFilters" resultType="long">
         SELECT COUNT(*)
         FROM todos t
         WHERE t.user_id = #{userId}
+        <if test="keyword != null and keyword != ''">
+            AND t.title LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        <if test="categoryId != null">
+            AND t.category_id = #{categoryId}
+        </if>
+    </select>
+
+    <select id="countAllWithFilters" resultType="long">
+        SELECT COUNT(*)
+        FROM todos t
+        WHERE 1=1
         <if test="keyword != null and keyword != ''">
             AND t.title LIKE CONCAT('%', #{keyword}, '%')
         </if>
@@ -134,6 +193,17 @@
         WHERE id = #{id} AND user_id = #{userId}
     </update>
 
+    <update id="updateById">
+        UPDATE todos
+        SET title = #{title},
+            description = #{description},
+            category_id = #{categoryId},
+            due_date = #{dueDate},
+            priority = #{priority},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
     <update id="toggleCompleted">
         UPDATE todos
         SET completed = CASE WHEN completed = TRUE THEN FALSE ELSE TRUE END,
@@ -141,15 +211,35 @@
         WHERE id = #{id} AND user_id = #{userId}
     </update>
 
+    <update id="toggleCompletedById">
+        UPDATE todos
+        SET completed = CASE WHEN completed = TRUE THEN FALSE ELSE TRUE END,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
     <delete id="deleteByIdAndUser">
         DELETE FROM todos
         WHERE id = #{id} AND user_id = #{userId}
+    </delete>
+
+    <delete id="deleteById">
+        DELETE FROM todos
+        WHERE id = #{id}
     </delete>
 
     <delete id="deleteByIdsAndUser">
         DELETE FROM todos
         WHERE user_id = #{userId}
         AND id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM todos
+        WHERE id IN
         <foreach collection="ids" item="id" open="(" separator="," close=")">
             #{id}
         </foreach>

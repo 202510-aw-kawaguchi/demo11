@@ -25,8 +25,29 @@ public interface TodoMapper {
             @Param("dir") String dir
     );
 
+    List<Todo> findAllWithFilters(
+            @Param("keyword") String keyword,
+            @Param("categoryId") Long categoryId,
+            @Param("sort") String sort,
+            @Param("dir") String dir,
+            @Param("limit") int limit,
+            @Param("offset") int offset
+    );
+
+    List<Todo> findAllWithFiltersNoPaging(
+            @Param("keyword") String keyword,
+            @Param("categoryId") Long categoryId,
+            @Param("sort") String sort,
+            @Param("dir") String dir
+    );
+
     long countByUserWithFilters(
             @Param("userId") Long userId,
+            @Param("keyword") String keyword,
+            @Param("categoryId") Long categoryId
+    );
+
+    long countAllWithFilters(
             @Param("keyword") String keyword,
             @Param("categoryId") Long categoryId
     );
@@ -42,7 +63,11 @@ public interface TodoMapper {
 
     int insert(Todo todo);
     int update(Todo todo);
+    int updateById(Todo todo);
     int deleteByIdAndUser(@Param("id") Long id, @Param("userId") Long userId);
+    int deleteById(@Param("id") Long id);
     int deleteByIdsAndUser(@Param("ids") List<Long> ids, @Param("userId") Long userId);
+    int deleteByIds(@Param("ids") List<Long> ids);
     int toggleCompleted(@Param("id") Long id, @Param("userId") Long userId);
+    int toggleCompletedById(@Param("id") Long id);
 }

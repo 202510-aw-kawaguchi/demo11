@@ -21,7 +21,16 @@ public class DataInitializer implements CommandLineRunner {
             user.setUsername("user");
             user.setPassword(passwordEncoder.encode("password"));
             user.setRole("USER");
+            user.setEnabled(true);
             userMapper.insert(user);
+        }
+        if (userMapper.findByUsername("admin") == null) {
+            User admin = new User();
+            admin.setUsername("admin");
+            admin.setPassword(passwordEncoder.encode("adminpass"));
+            admin.setRole("ADMIN");
+            admin.setEnabled(true);
+            userMapper.insert(admin);
         }
     }
 }

@@ -137,9 +137,7 @@ public class TodoController {
             return "todo/form";
         }
         todoService.create(todoForm.getTitle(), todoForm.getDetail(), todoForm.getPriority(), todoForm.getDueDate(), todoForm.getCategoryId());
-        redirectAttributes.addFlashAttribute("message", "登録が完了しました");
-        redirectAttributes.addFlashAttribute("messageType", "success");
-        return "redirect:/todos";
+        return "todo/complete";
     }
 
     @PostMapping("/todos/create")
@@ -213,6 +211,9 @@ public class TodoController {
     private String normalizeSortKey(String sort) {
         if ("title".equalsIgnoreCase(sort)) {
             return "title";
+        }
+        if ("dueDate".equalsIgnoreCase(sort) || "deadline".equalsIgnoreCase(sort)) {
+            return "dueDate";
         }
         if ("priority".equalsIgnoreCase(sort)) {
             return "priority";

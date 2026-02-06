@@ -91,7 +91,16 @@
                                         </span>
                                     </a>
                                 </th>
-                                <th scope="col">期限日</th>
+                                <th scope="col">
+                                    <a class="text-decoration-none text-dark"
+                                       th:href="@{/todos(sort='dueDate',dir=${sort == 'dueDate' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
+                                        期限日
+                                        <span class="ms-1">
+                                            <span th:classappend="${sort == 'dueDate' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
+                                            <span th:classappend="${sort == 'dueDate' and dir == 'desc'} ? 'text-dark' : 'text-muted'">▼</span>
+                                        </span>
+                                    </a>
+                                </th>
                                 <th scope="col">
                                     <a class="text-decoration-none text-dark"
                                        th:href="@{/todos(sort='priority',dir=${sort == 'priority' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
@@ -135,7 +144,8 @@
                                 </td>
                                 <td>
                                     <span th:if="${todo.dueDate != null}"
-                                        th:classappend="${todo.dueDate.isBefore(T(java.time.LocalDate).now())} ? 'text-danger' : ''"
+                                        class="px-2 py-1 rounded"
+                                        th:classappend="${todo.dueDate.isBefore(T(java.time.LocalDate).now())} ? 'text-danger bg-danger-subtle' : (${!todo.dueDate.isBefore(T(java.time.LocalDate).now()) and !todo.dueDate.isAfter(T(java.time.LocalDate).now().plusDays(3))} ? 'text-warning bg-warning-subtle' : '')"
                                         th:text="${#temporals.format(todo.dueDate, 'yyyy/MM/dd')}">2026/02/05</span>
                                     <span th:if="${todo.dueDate == null}" class="text-muted">未設定</span>
                                 </td>

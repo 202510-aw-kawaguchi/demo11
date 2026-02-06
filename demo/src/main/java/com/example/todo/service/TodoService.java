@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -15,11 +16,12 @@ public class TodoService {
 
     private final TodoRepository todoRepository;
 
-    public Todo create(String title, String description, Integer priority) {
+    public Todo create(String title, String description, Integer priority, LocalDate dueDate) {
         Todo todo = new Todo();
         todo.setTitle(title);
         todo.setDescription(description);
         todo.setPriority(priority != null ? priority : 1);
+        todo.setDueDate(dueDate);
         return todoRepository.save(todo);
     }
 
@@ -44,10 +46,11 @@ public class TodoService {
     }
 
     @Transactional
-    public Todo update(Long id, String title, String description) {
+    public Todo update(Long id, String title, String description, LocalDate dueDate) {
         Todo todo = findById(id);
         todo.setTitle(title);
         todo.setDescription(description);
+        todo.setDueDate(dueDate);
         return todoRepository.save(todo);
     }
 

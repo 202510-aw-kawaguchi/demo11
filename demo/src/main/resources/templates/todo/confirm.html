@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -19,23 +19,30 @@
 
         <div class="card shadow-sm">
             <div class="card-body">
-                <form th:action="@{/todos/complete}" method="post">
+                <form th:action="@{/todos/complete}" method="post" th:object="${todoForm}">
                     <div class="mb-3">
-                        <label class="form-label">タイトル</label>
-                        <input type="text" class="form-control" th:value="${title}" readonly>
-                        <input type="hidden" name="title" th:value="${title}">
+                        <label class="form-label">作者</label>
+                        <input type="text" class="form-control" th:field="*{author}" readonly>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">説明</label>
-                        <textarea class="form-control" rows="4" readonly th:text="${description}"></textarea>
-                        <input type="hidden" name="description" th:value="${description}">
+                        <label class="form-label">タイトル</label>
+                        <input type="text" class="form-control" th:field="*{title}" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">詳細</label>
+                        <textarea class="form-control" rows="4" th:field="*{detail}" readonly></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">期限日</label>
+                        <input type="date" class="form-control" th:field="*{dueDate}" readonly>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">優先度</label>
-                        <input type="text" class="form-control" th:value="${priority}" readonly>
-                        <input type="hidden" name="priority" th:value="${priority}">
+                        <input type="text" class="form-control" th:field="*{priority}" readonly>
                     </div>
 
                     <div class="d-flex gap-2">

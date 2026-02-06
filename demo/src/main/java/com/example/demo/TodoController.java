@@ -20,6 +20,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import com.example.todo.entity.Priority;
+import com.example.todo.entity.Todo;
 
 import com.example.demo.form.TodoForm;
 import com.example.todo.exception.TodoNotFoundException;
@@ -40,7 +42,7 @@ public class TodoController {
             @RequestParam(required = false, defaultValue = "createdAt") String sort,
             @RequestParam(required = false, defaultValue = "desc") String dir,
             Model model) {
-        Page<?> todoPage;
+        Page<Todo> todoPage;
         String sortKey = normalizeSortKey(sort);
         Sort.Direction direction = "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC;
         Sort sortSpec = Sort.by(direction, sortKey);
@@ -52,6 +54,11 @@ public class TodoController {
         } else {
             todoPage = todoService.findAll(pageable);
             model.addAttribute("keyword", "");
+        }
+        for (Todo todo : todoPage.getContent()) {
+            if (todo.getPriority() == null) {
+                todo.setPriority(Priority.MEDIUM);
+            }
         }
         model.addAttribute("todos", todoPage.getContent());
         model.addAttribute("page", todoPage);
@@ -135,10 +142,11 @@ public class TodoController {
             @PathVariable Long id,
             @RequestParam String title,
             @RequestParam(required = false) String description,
+            @RequestParam(required = false) Priority priority,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) java.time.LocalDate dueDate,
             RedirectAttributes redirectAttributes) {
 
-        todoService.update(id, title, description, dueDate);
+        todoService.update(id, title, description, priority, dueDate);
         redirectAttributes.addFlashAttribute("message", "譖ｴ譁ｰ縺悟ｮ御ｺ・＠縺ｾ縺励◆");
         return "redirect:/todos";
     }
@@ -183,6 +191,9 @@ public class TodoController {
     private String normalizeSortKey(String sort) {
         if ("title".equalsIgnoreCase(sort)) {
             return "title";
+        }
+        if ("priority".equalsIgnoreCase(sort)) {
+            return "priority";
         }
         if ("completed".equalsIgnoreCase(sort) || "status".equalsIgnoreCase(sort)) {
             return "completed";

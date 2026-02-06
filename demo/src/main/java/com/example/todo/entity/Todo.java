@@ -24,8 +24,9 @@ public class Todo {
 
     private LocalDate dueDate;
 
-    @Column(columnDefinition = "INTEGER DEFAULT 1")
-    private Integer priority = 1;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10, nullable = false)
+    private Priority priority = Priority.MEDIUM;
 
     @Column(columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean completed = false;

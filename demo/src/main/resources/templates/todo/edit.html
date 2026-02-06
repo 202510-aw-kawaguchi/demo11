@@ -28,6 +28,13 @@
                 <label class="form-label">期限日</label>
                 <input type="date" name="dueDate" class="form-control" th:value="${todo.dueDate}">
             </div>
+            <div class="mb-3">
+                <label class="form-label">優先度</label>
+                <select name="priority" class="form-select">
+                    <option th:each="p : ${T(com.example.todo.entity.Priority).values()}"
+                        th:value="${p}" th:text="${p.label}" th:selected="${p == todo.priority}"></option>
+                </select>
+            </div>
 
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">譖ｴ譁ｰ</button>
@@ -37,4 +44,5 @@
     </main>
 </body>
 </html>
+
 

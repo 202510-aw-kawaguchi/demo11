@@ -6,6 +6,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import com.example.todo.entity.Priority;
 
 @Data
 public class TodoForm {
@@ -25,5 +26,5 @@ public class TodoForm {
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate dueDate;
-    private Integer priority = 1;
+    private Priority priority = Priority.MEDIUM;
 }

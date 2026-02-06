@@ -1,6 +1,7 @@
 package com.example.todo.service;
 
 import com.example.todo.entity.Todo;
+import com.example.todo.entity.Priority;
 import com.example.todo.exception.TodoNotFoundException;
 import com.example.todo.repository.TodoRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +19,11 @@ public class TodoService {
 
     private final TodoRepository todoRepository;
 
-    public Todo create(String title, String description, Integer priority, LocalDate dueDate) {
+    public Todo create(String title, String description, Priority priority, LocalDate dueDate) {
         Todo todo = new Todo();
         todo.setTitle(title);
         todo.setDescription(description);
-        todo.setPriority(priority != null ? priority : 1);
+        todo.setPriority(priority != null ? priority : Priority.MEDIUM);
         todo.setDueDate(dueDate);
         return todoRepository.save(todo);
     }
@@ -68,10 +69,11 @@ public class TodoService {
     }
 
     @Transactional
-    public Todo update(Long id, String title, String description, LocalDate dueDate) {
+    public Todo update(Long id, String title, String description, Priority priority, LocalDate dueDate) {
         Todo todo = findById(id);
         todo.setTitle(title);
         todo.setDescription(description);
+        todo.setPriority(priority != null ? priority : Priority.MEDIUM);
         todo.setDueDate(dueDate);
         return todoRepository.save(todo);
     }

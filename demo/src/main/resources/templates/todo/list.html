@@ -84,7 +84,16 @@
                                     </a>
                                 </th>
                                 <th scope="col">期限日</th>
-                                <th scope="col">優先度</th>
+                                <th scope="col">
+                                    <a class="text-decoration-none text-dark"
+                                       th:href="@{/todos(sort='priority',dir=${sort == 'priority' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},page=${page.number})}">
+                                        優先度
+                                        <span class="ms-1">
+                                            <span th:classappend="${sort == 'priority' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
+                                            <span th:classappend="${sort == 'priority' and dir == 'desc'} ? 'text-dark' : 'text-muted'">▼</span>
+                                        </span>
+                                    </a>
+                                </th>
                                 <th scope="col">
                                     <a class="text-decoration-none text-dark"
                                        th:href="@{/todos(sort='completed',dir=${sort == 'completed' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},page=${page.number})}">
@@ -117,8 +126,11 @@
                                     <span th:if="${todo.dueDate == null}" class="text-muted">未設定</span>
                                 </td>
                                 <td>
-                                    <span class="text-warning" aria-label="priority">
-                                        <span th:each="i : ${#numbers.sequence(1, todo.priority)}">★</span>
+                                    <span th:switch="${todo.priority != null ? todo.priority.toString() : ''}">
+                                        <span th:case="'HIGH'" class="badge text-bg-danger">高</span>
+                                        <span th:case="'MEDIUM'" class="badge text-bg-warning">中</span>
+                                        <span th:case="'LOW'" class="badge text-bg-success">低</span>
+                                        <span th:case="*" class="badge text-bg-secondary">未設定</span>
                                     </span>
                                 </td>
                                 <!-- 完了/未完了ボタン -->

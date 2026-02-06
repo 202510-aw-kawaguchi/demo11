@@ -38,11 +38,8 @@
             <div class="mb-3">
                 <label for="priority" class="form-label">優先度</label>
                 <select class="form-select" id="priority" th:field="*{priority}">
-                    <option value="1">1 (低)</option>
-                    <option value="2">2</option>
-                    <option value="3">3 (中)</option>
-                    <option value="4">4</option>
-                    <option value="5">5 (高)</option>
+                    <option th:each="p : ${T(com.example.todo.entity.Priority).values()}"
+                        th:value="${p}" th:text="${p.label}"></option>
                 </select>
             </div>
 

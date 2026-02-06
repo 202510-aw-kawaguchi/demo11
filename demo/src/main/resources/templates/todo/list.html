@@ -39,7 +39,9 @@
                 <a th:href="@{/todos}" class="btn btn-outline-secondary">クリア</a>
             </div>
             <div class="col-12 col-sm-auto ms-sm-auto text-muted small">
-                <span th:text="${resultCount}">0</span> 件
+                <span th:text="${resultCount}">0</span> 件中
+                <span th:text="${resultStart}">0</span>-
+                <span th:text="${resultEnd}">0</span> 件を表示
             </div>
         </form>
 
@@ -63,7 +65,7 @@
                             <tr>
                                 <th scope="col" class="ps-3">
                                     <a class="text-decoration-none text-dark"
-                                       th:href="@{/todos(sort='title',dir=${sort == 'title' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword})}">
+                                       th:href="@{/todos(sort='title',dir=${sort == 'title' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},page=${page.number})}">
                                         タイトル
                                         <span class="ms-1">
                                             <span th:classappend="${sort == 'title' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
@@ -73,7 +75,7 @@
                                 </th>
                                 <th scope="col">
                                     <a class="text-decoration-none text-dark"
-                                       th:href="@{/todos(sort='createdAt',dir=${sort == 'createdAt' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword})}">
+                                       th:href="@{/todos(sort='createdAt',dir=${sort == 'createdAt' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},page=${page.number})}">
                                         作成日
                                         <span class="ms-1">
                                             <span th:classappend="${sort == 'createdAt' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
@@ -85,7 +87,7 @@
                                 <th scope="col">優先度</th>
                                 <th scope="col">
                                     <a class="text-decoration-none text-dark"
-                                       th:href="@{/todos(sort='completed',dir=${sort == 'completed' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword})}">
+                                       th:href="@{/todos(sort='completed',dir=${sort == 'completed' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},page=${page.number})}">
                                         状態
                                         <span class="ms-1">
                                             <span th:classappend="${sort == 'completed' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
@@ -166,6 +168,26 @@
                 </a>
             </div>
         </div>
+
+        <nav class="mt-3" th:if="${page != null && page.totalPages > 1}">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:classappend="${page.first} ? 'disabled'">
+                    <a class="page-link"
+                       th:href="@{/todos(page=${page.number - 1},sort=${sort},dir=${dir},keyword=${keyword})}">前へ</a>
+                </li>
+                <li class="page-item"
+                    th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+                    th:classappend="${i == page.number} ? 'active'">
+                    <a class="page-link"
+                       th:href="@{/todos(page=${i},sort=${sort},dir=${dir},keyword=${keyword})}"
+                       th:text="${i + 1}">1</a>
+                </li>
+                <li class="page-item" th:classappend="${page.last} ? 'disabled'">
+                    <a class="page-link"
+                       th:href="@{/todos(page=${page.number + 1},sort=${sort},dir=${dir},keyword=${keyword})}">次へ</a>
+                </li>
+            </ul>
+        </nav>
     </main>
 
     <!-- 削除確認モーダル -->

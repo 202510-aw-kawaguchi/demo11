@@ -15,6 +15,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -34,23 +36,32 @@ public class TodoController {
     @GetMapping("/todos")
     public String list(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "createdAt") String sort,
             @RequestParam(required = false, defaultValue = "desc") String dir,
             Model model) {
-        List<?> todos;
+        Page<?> todoPage;
         String sortKey = normalizeSortKey(sort);
         Sort.Direction direction = "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC;
         Sort sortSpec = Sort.by(direction, sortKey);
+        PageRequest pageable = PageRequest.of(Math.max(page, 0), 10, sortSpec);
         if (StringUtils.hasText(keyword)) {
             String trimmed = keyword.trim();
-            todos = todoService.searchByTitle(trimmed, sortSpec);
+            todoPage = todoService.searchByTitle(trimmed, pageable);
             model.addAttribute("keyword", trimmed);
         } else {
-            todos = todoService.findAll(sortSpec);
+            todoPage = todoService.findAll(pageable);
             model.addAttribute("keyword", "");
         }
-        model.addAttribute("todos", todos);
-        model.addAttribute("resultCount", todos.size());
+        model.addAttribute("todos", todoPage.getContent());
+        model.addAttribute("page", todoPage);
+        model.addAttribute("resultCount", todoPage.getTotalElements());
+        long total = todoPage.getTotalElements();
+        int numberOfElements = todoPage.getNumberOfElements();
+        long start = total == 0 ? 0 : (long) todoPage.getNumber() * todoPage.getSize() + 1;
+        long end = total == 0 ? 0 : (long) todoPage.getNumber() * todoPage.getSize() + numberOfElements;
+        model.addAttribute("resultStart", start);
+        model.addAttribute("resultEnd", end);
         model.addAttribute("sort", sortKey);
         model.addAttribute("dir", direction.name().toLowerCase());
         return "todo/list";

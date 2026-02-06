@@ -4,6 +4,8 @@ import com.example.todo.entity.Todo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
@@ -17,6 +19,7 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
     // タイトルで部分一致検索
     List<Todo> findByTitleContaining(String keyword);
     List<Todo> findByTitleContaining(String keyword, Sort sort);
+    Page<Todo> findByTitleContaining(String keyword, Pageable pageable);
 
     // 期限日が指定日以前のもの
     List<Todo> findByDueDateLessThanEqual(LocalDate date);

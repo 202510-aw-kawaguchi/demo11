@@ -5,6 +5,8 @@ import com.example.todo.exception.TodoNotFoundException;
 import com.example.todo.repository.TodoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
@@ -33,12 +35,20 @@ public class TodoService {
         return todoRepository.findAll(sort);
     }
 
+    public Page<Todo> findAll(Pageable pageable) {
+        return todoRepository.findAll(pageable);
+    }
+
     public List<Todo> searchByTitle(String keyword) {
         return todoRepository.findByTitleContaining(keyword, Sort.by(Sort.Direction.DESC, "createdAt"));
     }
 
     public List<Todo> searchByTitle(String keyword, Sort sort) {
         return todoRepository.findByTitleContaining(keyword, sort);
+    }
+
+    public Page<Todo> searchByTitle(String keyword, Pageable pageable) {
+        return todoRepository.findByTitleContaining(keyword, pageable);
     }
 
     public List<Todo> findByCompleted(boolean completed) {

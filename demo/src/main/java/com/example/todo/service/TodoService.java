@@ -3,11 +3,9 @@
 import com.example.todo.entity.Category;
 import com.example.todo.entity.Priority;
 import com.example.todo.entity.Todo;
-import com.example.todo.entity.TodoEditLog;
 import com.example.todo.entity.User;
 import com.example.todo.exception.TodoNotFoundException;
 import com.example.todo.mapper.CategoryMapper;
-import com.example.todo.mapper.TodoEditLogMapper;
 import com.example.todo.mapper.TodoMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,8 +20,9 @@ public class TodoService {
 
     private final TodoMapper todoMapper;
     private final CategoryMapper categoryMapper;
-    private final TodoEditLogMapper todoEditLogMapper;
+    private final TodoEditLogService todoEditLogService;
 
+    @Transactional(rollbackFor = Exception.class, noRollbackFor = com.example.todo.exception.BusinessException.class)
     public Todo create(String title, String description, Priority priority, LocalDate dueDate, Long categoryId, String author, User user) {
         Todo todo = new Todo();
         todo.setTitle(title);
@@ -38,6 +37,7 @@ public class TodoService {
         return todo;
     }
 
+    @Transactional(readOnly = true)
     public List<Todo> findByUserWithFilters(User user, String keyword, Long categoryId, String sort, String dir, int page, int size) {
         int offset = Math.max(page, 0) * size;
         if (isAdmin(user)) {
@@ -46,6 +46,7 @@ public class TodoService {
         return todoMapper.findByUserWithFilters(user.getId(), keyword, categoryId, sort, dir, size, offset);
     }
 
+    @Transactional(readOnly = true)
     public List<Todo> findByUserWithFiltersNoPaging(User user, String keyword, Long categoryId, String sort, String dir) {
         if (isAdmin(user)) {
             return todoMapper.findAllWithFiltersNoPaging(keyword, categoryId, sort, dir);
@@ -53,6 +54,7 @@ public class TodoService {
         return todoMapper.findByUserWithFiltersNoPaging(user.getId(), keyword, categoryId, sort, dir);
     }
 
+    @Transactional(readOnly = true)
     public long countByUserWithFilters(User user, String keyword, Long categoryId) {
         if (isAdmin(user)) {
             return todoMapper.countAllWithFilters(keyword, categoryId);
@@ -60,11 +62,12 @@ public class TodoService {
         return todoMapper.countByUserWithFilters(user.getId(), keyword, categoryId);
     }
 
+    @Transactional(readOnly = true)
     public Todo findById(Long id, User user) {
         return getOwnedTodo(id, user);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, noRollbackFor = com.example.todo.exception.BusinessException.class)
     public Todo toggleCompleted(Long id, User user) {
         Todo todo = getOwnedTodo(id, user);
         if (isAdmin(user)) {
@@ -76,25 +79,11 @@ public class TodoService {
         return todo;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, noRollbackFor = com.example.todo.exception.BusinessException.class)
     public Todo update(Long id, String title, String description, Priority priority, LocalDate dueDate, Long categoryId, User user) {
         Todo todo = getOwnedTodo(id, user);
         if (isAdmin(user) && todo.getUser() != null && !todo.getUser().getId().equals(user.getId())) {
-            TodoEditLog log = new TodoEditLog();
-            log.setTodoId(todo.getId());
-            log.setAdminUserId(user.getId());
-            log.setTargetUserId(todo.getUser().getId());
-            log.setBeforeTitle(todo.getTitle());
-            log.setBeforeDescription(todo.getDescription());
-            log.setBeforePriority(todo.getPriority() != null ? todo.getPriority().name() : null);
-            log.setBeforeDueDate(todo.getDueDate());
-            log.setBeforeCategoryId(todo.getCategoryId());
-            log.setAfterTitle(title);
-            log.setAfterDescription(description);
-            log.setAfterPriority((priority != null ? priority : Priority.MEDIUM).name());
-            log.setAfterDueDate(dueDate);
-            log.setAfterCategoryId(categoryId);
-            todoEditLogMapper.insert(log);
+            todoEditLogService.recordAdminEdit(todo, title, description, priority, dueDate, categoryId, user);
         }
         todo.setTitle(title);
         todo.setDescription(description);
@@ -109,7 +98,7 @@ public class TodoService {
         return todo;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, noRollbackFor = com.example.todo.exception.BusinessException.class)
     public void delete(Long id, User user) {
         Todo todo = getOwnedTodo(id, user);
         if (isAdmin(user)) {
@@ -119,7 +108,7 @@ public class TodoService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class, noRollbackFor = com.example.todo.exception.BusinessException.class)
     public void deleteAllByIds(Collection<Long> ids, User user) {
         if (ids == null || ids.isEmpty()) {
             return;

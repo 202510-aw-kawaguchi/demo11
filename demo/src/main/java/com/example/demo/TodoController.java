@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
@@ -30,9 +31,18 @@ public class TodoController {
     private final TodoService todoService;
 
     @GetMapping("/todos")
-    public String list(Model model) {
-        List<?> todos = todoService.findAll();
+    public String list(@RequestParam(required = false) String keyword, Model model) {
+        List<?> todos;
+        if (StringUtils.hasText(keyword)) {
+            String trimmed = keyword.trim();
+            todos = todoService.searchByTitle(trimmed);
+            model.addAttribute("keyword", trimmed);
+        } else {
+            todos = todoService.findAll();
+            model.addAttribute("keyword", "");
+        }
         model.addAttribute("todos", todos);
+        model.addAttribute("resultCount", todos.size());
         return "todo/list";
     }
 

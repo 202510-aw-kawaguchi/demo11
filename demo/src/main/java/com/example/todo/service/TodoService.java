@@ -29,6 +29,10 @@ public class TodoService {
         return todoRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
     }
 
+    public List<Todo> searchByTitle(String keyword) {
+        return todoRepository.findByTitleContaining(keyword, Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
+
     public List<Todo> findByCompleted(boolean completed) {
         return todoRepository.findByCompleted(completed);
     }

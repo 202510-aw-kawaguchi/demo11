@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 
 <head>
@@ -22,6 +22,21 @@
             <h1 class="h4 mb-0">ToDo一覧</h1>
             <a class="btn btn-primary" th:href="@{/todos/new}">新規作成</a>
         </div>
+        <form class="row g-2 align-items-center mb-3" th:action="@{/todos}" method="get">
+            <div class="col-sm-6 col-md-5">
+                <input type="text" class="form-control" name="keyword" placeholder="タイトルで検索"
+                    th:value="${keyword}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-primary">検索</button>
+            </div>
+            <div class="col-auto" th:if="${!#strings.isEmpty(keyword)}">
+                <a th:href="@{/todos}" class="btn btn-outline-secondary">クリア</a>
+            </div>
+            <div class="col-12 col-sm-auto ms-sm-auto text-muted small">
+                <span th:text="${resultCount}">0</span> 件
+            </div>
+        </form>
 
         <!-- フラッシュメッセージ表示 -->
         <div th:if="${message}" th:classappend="'alert alert-' + ${messageType ?: 'info'}"
@@ -44,13 +59,13 @@
                                 <th scope="col" class="ps-3">タイトル</th>
                                 <th scope="col">期限日</th>
                                 <th scope="col">優先度</th>
-                                <th scope="col">完了</th>
+                                <th scope="col">状態</th>
                                 <th scope="col" class="text-end pe-3">操作</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:each="todo : ${todos}">
-                                <!-- 完了状態に応じて打ち消し線表示 -->
+                                <!-- 完了タスクは文字色を薄くし、打ち消し線 -->
                                 <td class="ps-3"
                                     th:classappend="${todo.completed} ? 'text-decoration-line-through text-muted'">
                                     <span th:text="${todo.title}">サンプルタスク</span>
@@ -66,7 +81,7 @@
                                         <span th:each="i : ${#numbers.sequence(1, todo.priority)}">★</span>
                                     </span>
                                 </td>
-                                <!-- 完了切り替えボタン -->
+                                <!-- 完了/未完了ボタン -->
                                 <td>
                                     <form th:action="@{/todos/{id}/toggle(id=${todo.id})}" method="post"
                                         class="d-inline">
@@ -77,15 +92,17 @@
                                         </button>
                                     </form>
                                 </td>
-                                <td class="text-end pe-3">
-                                    <a class="btn btn-sm btn-outline-secondary me-1"
-                                        th:href="@{/todos/{id}(id=${todo.id})}">詳細</a>
-                                    <a class="btn btn-sm btn-outline-primary me-1"
-                                        th:href="@{/todos/{id}/edit(id=${todo.id})}">編集</a>
-                                    <form th:action="@{/todos/{id}/delete(id=${todo.id})}" method="post"
-                                        class="d-inline" onsubmit="return confirm('本当に削除しますか？');">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">削除</button>
-                                    </form>
+                                <td class="text-end pe-3" style="white-space: nowrap;">
+                                    <div class="d-flex justify-content-end gap-2 flex-nowrap">
+                                        <a class="btn btn-sm btn-outline-secondary text-nowrap"
+                                            th:href="@{/todos/{id}(id=${todo.id})}">詳細</a>
+                                        <a class="btn btn-sm btn-outline-primary text-nowrap"
+                                            th:href="@{/todos/{id}/edit(id=${todo.id})}">編集</a>
+                                        <form th:action="@{/todos/{id}/delete(id=${todo.id})}" method="post"
+                                            class="d-inline" onsubmit="return confirm('本当に削除しますか？');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger text-nowrap">削除</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
@@ -115,7 +132,7 @@
         </div>
     </footer>
 
-    <!-- 自動で消えるJavaScript -->
+    <!-- 一定時間で自動的に閉じるアラート -->
     <script th:if="${message}">
         setTimeout(function () {
             const alert = document.querySelector('.alert');

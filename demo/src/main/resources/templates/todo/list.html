@@ -19,6 +19,10 @@
         <div class="container">
             <span class="navbar-brand fw-bold">ToDoアプリ</span>
             <span class="navbar-text small text-muted">一覧</span>
+            <form th:action="@{/logout}" method="post" class="ms-auto">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">ログアウト</button>
+            </form>
         </div>
     </header>
 
@@ -74,6 +78,7 @@
             <div class="card-body p-0" th:if="${!#lists.isEmpty(todos)}">
                 <div class="table-responsive">
                     <form th:action="@{/todos/bulk-delete}" method="post" id="bulkDeleteForm">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                         <div class="p-3 border-bottom d-flex align-items-center gap-2">
                             <button type="submit" class="btn btn-sm btn-outline-danger" id="bulkDeleteBtn">
                                 選択した項目を削除
@@ -186,6 +191,7 @@
                                 <td>
                                     <form th:action="@{/todos/{id}/toggle(id=${todo.id})}" method="post"
                                         class="d-inline">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                                         <button type="submit"
                                             th:class="${todo.completed} ? 'btn btn-sm btn-outline-secondary' : 'btn btn-sm btn-success'">
                                             <span th:if="${todo.completed}">未完了に戻す</span>
@@ -201,6 +207,7 @@
                                             th:href="@{/todos/{id}/edit(id=${todo.id})}">編集</a>
                                     <form th:action="@{/todos/{id}/delete(id=${todo.id})}" method="post"
                                         class="d-inline delete-form">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                                         <button type="button" class="btn btn-sm btn-outline-danger text-nowrap"
                                             data-bs-toggle="modal" data-bs-target="#deleteConfirmModal"
                                             th:attr="data-delete-action=@{/todos/{id}/delete(id=${todo.id})}">
@@ -290,20 +297,16 @@
         }, 3000);
     </script>
     <script>
-        let pendingDeleteAction = null;
+        let pendingDeleteForm = null;
         document.addEventListener('click', function (event) {
             const target = event.target;
             if (target && target.matches('[data-delete-action]')) {
-                pendingDeleteAction = target.getAttribute('data-delete-action');
+                pendingDeleteForm = target.closest('form');
             }
         });
         document.getElementById('deleteConfirmBtn')?.addEventListener('click', function () {
-            if (!pendingDeleteAction) return;
-            const form = document.createElement('form');
-            form.method = 'post';
-            form.action = pendingDeleteAction;
-            document.body.appendChild(form);
-            form.submit();
+            if (!pendingDeleteForm) return;
+            pendingDeleteForm.submit();
         });
     </script>
     <script>

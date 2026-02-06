@@ -12,6 +12,7 @@
         <h1>ToDo入力</h1>
 
         <form th:action="@{/todos/confirm}" method="post" th:object="${todoForm}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <div class="mb-3">
                 <label for="author" class="form-label">作者 <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" id="author" th:field="*{author}" required>

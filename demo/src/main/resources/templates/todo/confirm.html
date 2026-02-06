@@ -20,6 +20,7 @@
         <div class="card shadow-sm">
             <div class="card-body">
                 <form th:action="@{/todos/complete}" method="post" th:object="${todoForm}">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                     <div class="mb-3">
                         <label class="form-label">作者</label>
                         <input type="text" class="form-control" th:field="*{author}" readonly>

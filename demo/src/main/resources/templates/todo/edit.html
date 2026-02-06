@@ -11,6 +11,7 @@
         <h1 class="h4 mb-3">ToDo邱ｨ髮・/h1>
 
         <form th:action="@{/todos/{id}/update(id=${todo.id})}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <!-- ID繧帝國縺励ヵ繧｣繝ｼ繝ｫ繝峨〒菫晄戟 -->
             <input type="hidden" name="id" th:value="${todo.id}">
             <input type="hidden" name="version" th:value="${todo.version}">

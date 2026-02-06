@@ -1,9 +1,11 @@
-package com.example.todo.service;
+﻿package com.example.todo.service;
 
 import com.example.todo.entity.Todo;
 import com.example.todo.entity.Priority;
+import com.example.todo.entity.Category;
 import com.example.todo.exception.TodoNotFoundException;
 import com.example.todo.repository.TodoRepository;
+import com.example.todo.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Page;
@@ -18,13 +20,15 @@ import java.util.List;
 public class TodoService {
 
     private final TodoRepository todoRepository;
+    private final CategoryRepository categoryRepository;
 
-    public Todo create(String title, String description, Priority priority, LocalDate dueDate) {
+    public Todo create(String title, String description, Priority priority, LocalDate dueDate, Long categoryId) {
         Todo todo = new Todo();
         todo.setTitle(title);
         todo.setDescription(description);
         todo.setPriority(priority != null ? priority : Priority.MEDIUM);
         todo.setDueDate(dueDate);
+        todo.setCategory(resolveCategory(categoryId));
         return todoRepository.save(todo);
     }
 
@@ -52,6 +56,14 @@ public class TodoService {
         return todoRepository.findByTitleContaining(keyword, pageable);
     }
 
+    public Page<Todo> findByCategory(Long categoryId, Pageable pageable) {
+        return todoRepository.findByCategoryId(categoryId, pageable);
+    }
+
+    public Page<Todo> searchByTitleAndCategory(String keyword, Long categoryId, Pageable pageable) {
+        return todoRepository.findByTitleContainingAndCategoryId(keyword, categoryId, pageable);
+    }
+
     public List<Todo> findByCompleted(boolean completed) {
         return todoRepository.findByCompleted(completed);
     }
@@ -69,12 +81,13 @@ public class TodoService {
     }
 
     @Transactional
-    public Todo update(Long id, String title, String description, Priority priority, LocalDate dueDate) {
+    public Todo update(Long id, String title, String description, Priority priority, LocalDate dueDate, Long categoryId) {
         Todo todo = findById(id);
         todo.setTitle(title);
         todo.setDescription(description);
         todo.setPriority(priority != null ? priority : Priority.MEDIUM);
         todo.setDueDate(dueDate);
+        todo.setCategory(resolveCategory(categoryId));
         return todoRepository.save(todo);
     }
 
@@ -85,4 +98,13 @@ public class TodoService {
         }
         todoRepository.deleteById(id);
     }
+
+    private Category resolveCategory(Long categoryId) {
+        if (categoryId == null) {
+            return null;
+        }
+        return categoryRepository.findById(categoryId).orElse(null);
+    }
 }
+
+

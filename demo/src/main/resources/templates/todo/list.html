@@ -32,10 +32,17 @@
                 <input type="text" class="form-control" name="keyword" placeholder="タイトルで検索"
                     th:value="${keyword}">
             </div>
+            <div class="col-sm-4 col-md-3">
+                <select class="form-select" name="categoryId">
+                    <option value="">カテゴリ: すべて</option>
+                    <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}"
+                        th:selected="${categoryId != null && c.id == categoryId}"></option>
+                </select>
+            </div>
             <div class="col-auto">
                 <button type="submit" class="btn btn-outline-primary">検索</button>
             </div>
-            <div class="col-auto" th:if="${!#strings.isEmpty(keyword)}">
+            <div class="col-auto" th:if="${!#strings.isEmpty(keyword) || categoryId != null}">
                 <a th:href="@{/todos}" class="btn btn-outline-secondary">クリア</a>
             </div>
             <div class="col-12 col-sm-auto ms-sm-auto text-muted small">
@@ -65,7 +72,7 @@
                             <tr>
                                 <th scope="col" class="ps-3">
                                     <a class="text-decoration-none text-dark"
-                                       th:href="@{/todos(sort='title',dir=${sort == 'title' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},page=${page.number})}">
+                                       th:href="@{/todos(sort='title',dir=${sort == 'title' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
                                         タイトル
                                         <span class="ms-1">
                                             <span th:classappend="${sort == 'title' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
@@ -73,9 +80,10 @@
                                         </span>
                                     </a>
                                 </th>
+                                <th scope="col">カテゴリ</th>
                                 <th scope="col">
                                     <a class="text-decoration-none text-dark"
-                                       th:href="@{/todos(sort='createdAt',dir=${sort == 'createdAt' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},page=${page.number})}">
+                                       th:href="@{/todos(sort='createdAt',dir=${sort == 'createdAt' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
                                         作成日
                                         <span class="ms-1">
                                             <span th:classappend="${sort == 'createdAt' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
@@ -86,7 +94,7 @@
                                 <th scope="col">期限日</th>
                                 <th scope="col">
                                     <a class="text-decoration-none text-dark"
-                                       th:href="@{/todos(sort='priority',dir=${sort == 'priority' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},page=${page.number})}">
+                                       th:href="@{/todos(sort='priority',dir=${sort == 'priority' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
                                         優先度
                                         <span class="ms-1">
                                             <span th:classappend="${sort == 'priority' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
@@ -96,7 +104,7 @@
                                 </th>
                                 <th scope="col">
                                     <a class="text-decoration-none text-dark"
-                                       th:href="@{/todos(sort='completed',dir=${sort == 'completed' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},page=${page.number})}">
+                                       th:href="@{/todos(sort='completed',dir=${sort == 'completed' and dir == 'asc' ? 'desc' : 'asc'},keyword=${keyword},categoryId=${categoryId},page=${page.number})}">
                                         状態
                                         <span class="ms-1">
                                             <span th:classappend="${sort == 'completed' and dir == 'asc'} ? 'text-dark' : 'text-muted'">▲</span>
@@ -113,6 +121,12 @@
                                 <td class="ps-3"
                                     th:classappend="${todo.completed} ? 'text-decoration-line-through text-muted'">
                                     <span th:text="${todo.title}">サンプルタスク</span>
+                                </td>
+                                <td>
+                                    <span th:if="${todo.category != null}" class="badge text-white"
+                                        th:text="${todo.category.name}"
+                                        th:style="'background-color:' + ${todo.category.color}">カテゴリ</span>
+                                    <span th:if="${todo.category == null}" class="text-muted">未設定</span>
                                 </td>
                                 <td>
                                     <span th:if="${todo.createdAt != null}"
@@ -185,18 +199,18 @@
             <ul class="pagination justify-content-center">
                 <li class="page-item" th:classappend="${page.first} ? 'disabled'">
                     <a class="page-link"
-                       th:href="@{/todos(page=${page.number - 1},sort=${sort},dir=${dir},keyword=${keyword})}">前へ</a>
+                       th:href="@{/todos(page=${page.number - 1},sort=${sort},dir=${dir},keyword=${keyword},categoryId=${categoryId})}">前へ</a>
                 </li>
                 <li class="page-item"
                     th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
                     th:classappend="${i == page.number} ? 'active'">
                     <a class="page-link"
-                       th:href="@{/todos(page=${i},sort=${sort},dir=${dir},keyword=${keyword})}"
+                       th:href="@{/todos(page=${i},sort=${sort},dir=${dir},keyword=${keyword},categoryId=${categoryId})}"
                        th:text="${i + 1}">1</a>
                 </li>
                 <li class="page-item" th:classappend="${page.last} ? 'disabled'">
                     <a class="page-link"
-                       th:href="@{/todos(page=${page.number + 1},sort=${sort},dir=${dir},keyword=${keyword})}">次へ</a>
+                       th:href="@{/todos(page=${page.number + 1},sort=${sort},dir=${dir},keyword=${keyword},categoryId=${categoryId})}">次へ</a>
                 </li>
             </ul>
         </nav>

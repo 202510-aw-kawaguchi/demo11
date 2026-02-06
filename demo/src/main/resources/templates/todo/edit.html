@@ -35,6 +35,14 @@
                         th:value="${p}" th:text="${p.label}" th:selected="${p == todo.priority}"></option>
                 </select>
             </div>
+            <div class="mb-3">
+                <label class="form-label">カテゴリ</label>
+                <select name="categoryId" class="form-select">
+                    <option value="">未設定</option>
+                    <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}"
+                        th:selected="${todo.category != null && c.id == todo.category.id}"></option>
+                </select>
+            </div>
 
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">譖ｴ譁ｰ</button>
@@ -44,5 +52,6 @@
     </main>
 </body>
 </html>
+
 
 

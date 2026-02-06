@@ -31,6 +31,14 @@
             </div>
 
             <div class="mb-3">
+                <label for="categoryId" class="form-label">カテゴリ</label>
+                <select class="form-select" id="categoryId" th:field="*{categoryId}">
+                    <option value="">未設定</option>
+                    <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}"></option>
+                </select>
+            </div>
+
+            <div class="mb-3">
                 <label for="dueDate" class="form-label">期限日</label>
                 <input type="date" class="form-control" id="dueDate" th:field="*{dueDate}">
             </div>

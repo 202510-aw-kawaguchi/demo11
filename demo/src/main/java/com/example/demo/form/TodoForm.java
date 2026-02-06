@@ -24,6 +24,8 @@ public class TodoForm {
     @Size(max = 500)
     private String detail;
 
+    private Long categoryId;
+
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate dueDate;
     private Priority priority = Priority.MEDIUM;

@@ -20,6 +20,8 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
     List<Todo> findByTitleContaining(String keyword);
     List<Todo> findByTitleContaining(String keyword, Sort sort);
     Page<Todo> findByTitleContaining(String keyword, Pageable pageable);
+    Page<Todo> findByCategoryId(Long categoryId, Pageable pageable);
+    Page<Todo> findByTitleContainingAndCategoryId(String keyword, Long categoryId, Pageable pageable);
 
     // 期限日が指定日以前のもの
     List<Todo> findByDueDateLessThanEqual(LocalDate date);

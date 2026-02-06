@@ -22,6 +22,10 @@ public class Todo {
     @Column(length = 500)
     private String description;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
     private LocalDate dueDate;
 
     @Enumerated(EnumType.STRING)

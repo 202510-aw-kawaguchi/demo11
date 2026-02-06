@@ -1,7 +1,5 @@
 ﻿package com.example.demo;
 
-import java.util.List;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -22,9 +20,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import com.example.todo.entity.Priority;
 import com.example.todo.entity.Todo;
+import com.example.todo.entity.Category;
 
 import com.example.demo.form.TodoForm;
 import com.example.todo.exception.TodoNotFoundException;
+import com.example.todo.service.CategoryService;
 import com.example.todo.service.TodoService;
 
 import lombok.RequiredArgsConstructor;
@@ -34,10 +34,12 @@ import lombok.RequiredArgsConstructor;
 public class TodoController {
 
     private final TodoService todoService;
+    private final CategoryService categoryService;
 
     @GetMapping("/todos")
     public String list(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "createdAt") String sort,
             @RequestParam(required = false, defaultValue = "desc") String dir,
@@ -47,10 +49,17 @@ public class TodoController {
         Sort.Direction direction = "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC;
         Sort sortSpec = Sort.by(direction, sortKey);
         PageRequest pageable = PageRequest.of(Math.max(page, 0), 10, sortSpec);
-        if (StringUtils.hasText(keyword)) {
+        if (StringUtils.hasText(keyword) && categoryId != null) {
+            String trimmed = keyword.trim();
+            todoPage = todoService.searchByTitleAndCategory(trimmed, categoryId, pageable);
+            model.addAttribute("keyword", trimmed);
+        } else if (StringUtils.hasText(keyword)) {
             String trimmed = keyword.trim();
             todoPage = todoService.searchByTitle(trimmed, pageable);
             model.addAttribute("keyword", trimmed);
+        } else if (categoryId != null) {
+            todoPage = todoService.findByCategory(categoryId, pageable);
+            model.addAttribute("keyword", "");
         } else {
             todoPage = todoService.findAll(pageable);
             model.addAttribute("keyword", "");
@@ -71,6 +80,8 @@ public class TodoController {
         model.addAttribute("resultEnd", end);
         model.addAttribute("sort", sortKey);
         model.addAttribute("dir", direction.name().toLowerCase());
+        model.addAttribute("categories", categoryService.findAll());
+        model.addAttribute("categoryId", categoryId);
         return "todo/list";
     }
 
@@ -82,6 +93,7 @@ public class TodoController {
     @GetMapping("/todos/new")
     public String newTodo(Model model) {
         model.addAttribute("todoForm", new TodoForm());
+        model.addAttribute("categories", categoryService.findAll());
         return "todo/form";
     }
 
@@ -96,16 +108,21 @@ public class TodoController {
     public String editTodo(@PathVariable Long id, Model model) {
         var todo = todoService.findById(id);
         model.addAttribute("todo", todo);
+        model.addAttribute("categories", categoryService.findAll());
         return "todo/edit";
     }
 
     @PostMapping("/todos/confirm")
     public String confirmTodo(
             @Valid @ModelAttribute("todoForm") TodoForm todoForm,
-            BindingResult bindingResult) {
+            BindingResult bindingResult,
+            Model model) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute("categories", categoryService.findAll());
             return "todo/form";
         }
+        Category selectedCategory = categoryService.findById(todoForm.getCategoryId()).orElse(null);
+        model.addAttribute("selectedCategory", selectedCategory);
         return "todo/confirm";
     }
 
@@ -113,11 +130,13 @@ public class TodoController {
     public String completeTodo(
             @Valid @ModelAttribute("todoForm") TodoForm todoForm,
             BindingResult bindingResult,
+            Model model,
             RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute("categories", categoryService.findAll());
             return "todo/form";
         }
-        todoService.create(todoForm.getTitle(), todoForm.getDetail(), todoForm.getPriority(), todoForm.getDueDate());
+        todoService.create(todoForm.getTitle(), todoForm.getDetail(), todoForm.getPriority(), todoForm.getDueDate(), todoForm.getCategoryId());
         redirectAttributes.addFlashAttribute("message", "登録が完了しました");
         redirectAttributes.addFlashAttribute("messageType", "success");
         return "redirect:/todos";
@@ -127,11 +146,13 @@ public class TodoController {
     public String create(
             @Valid @ModelAttribute("todoForm") TodoForm todoForm,
             BindingResult bindingResult,
+            Model model,
             RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute("categories", categoryService.findAll());
             return "todo/form";
         }
-        todoService.create(todoForm.getTitle(), todoForm.getDetail(), todoForm.getPriority(), todoForm.getDueDate());
+        todoService.create(todoForm.getTitle(), todoForm.getDetail(), todoForm.getPriority(), todoForm.getDueDate(), todoForm.getCategoryId());
         redirectAttributes.addFlashAttribute("message", "登録が完了しました");
         redirectAttributes.addFlashAttribute("messageType", "success");
         return "redirect:/todos";
@@ -143,18 +164,19 @@ public class TodoController {
             @RequestParam String title,
             @RequestParam(required = false) String description,
             @RequestParam(required = false) Priority priority,
+            @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) java.time.LocalDate dueDate,
             RedirectAttributes redirectAttributes) {
 
-        todoService.update(id, title, description, priority, dueDate);
-        redirectAttributes.addFlashAttribute("message", "譖ｴ譁ｰ縺悟ｮ御ｺ・＠縺ｾ縺励◆");
+        todoService.update(id, title, description, priority, dueDate, categoryId);
+        redirectAttributes.addFlashAttribute("message", "更新が完了しました");
         return "redirect:/todos";
     }
 
     @PostMapping("/todos/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         todoService.delete(id);
-        redirectAttributes.addFlashAttribute("message", "ToDo繧貞炎髯､縺励∪縺励◆");
+        redirectAttributes.addFlashAttribute("message", "ToDoを削除しました");
         redirectAttributes.addFlashAttribute("messageType", "success");
         return "redirect:/todos";
     }
@@ -169,14 +191,14 @@ public class TodoController {
                     "completed", updated.getCompleted()
             ));
         }
-        redirectAttributes.addFlashAttribute("message", "螳御ｺ・憾諷九ｒ譖ｴ譁ｰ縺励∪縺励◆");
+        redirectAttributes.addFlashAttribute("message", "完了状態を更新しました");
         redirectAttributes.addFlashAttribute("messageType", "success");
         return "redirect:/todos";
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public String handleTodoNotFound(IllegalArgumentException ex, RedirectAttributes redirectAttributes) {
-        redirectAttributes.addFlashAttribute("error", "蜑企勁縺ｫ螟ｱ謨励＠縺ｾ縺励◆");
+        redirectAttributes.addFlashAttribute("error", "指定されたToDoが見つかりません");
         redirectAttributes.addFlashAttribute("messageType", "danger");
         return "redirect:/todos";
     }
@@ -201,5 +223,6 @@ public class TodoController {
         return "createdAt";
     }
 }
+
 
 

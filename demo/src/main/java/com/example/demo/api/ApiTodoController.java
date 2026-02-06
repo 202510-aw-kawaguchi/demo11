@@ -12,20 +12,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.util.StringUtils;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.nio.charset.StandardCharsets;
 
 @RestController
-@RequestMapping("/api/todos")
+@RequestMapping(value = "/api/todos", produces = "application/json; charset=UTF-8")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class ApiTodoController {
 
     private final TodoService todoService;
     private final UserMapper userMapper;
+    private static final MediaType JSON_UTF8 = new MediaType("application", "json", StandardCharsets.UTF_8);
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ApiTodoResponse>>> list(
@@ -43,7 +46,7 @@ public class ApiTodoController {
         for (Todo todo : todos) {
             response.add(toResponse(todo));
         }
-        return ResponseEntity.ok(ApiResponse.ok("OK", response));
+        return ResponseEntity.ok().contentType(JSON_UTF8).body(ApiResponse.ok("OK", response));
     }
 
     @GetMapping("/{id}")
@@ -52,7 +55,7 @@ public class ApiTodoController {
             @AuthenticationPrincipal UserDetails principal) {
         User user = requireUser(principal);
         Todo todo = todoService.findById(id, user);
-        return ResponseEntity.ok(ApiResponse.ok("OK", toResponse(todo)));
+        return ResponseEntity.ok().contentType(JSON_UTF8).body(ApiResponse.ok("OK", toResponse(todo)));
     }
 
     @PostMapping
@@ -71,6 +74,7 @@ public class ApiTodoController {
         );
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(URI.create("/api/todos/" + created.getId()));
+        headers.setContentType(JSON_UTF8);
         return new ResponseEntity<>(ApiResponse.ok("Created", toResponse(created)), headers, HttpStatus.CREATED);
     }
 
@@ -89,7 +93,7 @@ public class ApiTodoController {
                 request.getCategoryId(),
                 user
         );
-        return ResponseEntity.ok(ApiResponse.ok("Updated", toResponse(updated)));
+        return ResponseEntity.ok().contentType(JSON_UTF8).body(ApiResponse.ok("Updated", toResponse(updated)));
     }
 
     @DeleteMapping("/{id}")

@@ -28,11 +28,16 @@ import com.example.todo.entity.Category;
 import com.example.todo.entity.User;
 
 import com.example.demo.form.TodoForm;
+import com.example.demo.service.NotificationService;
 import com.example.todo.service.CategoryService;
 import com.example.todo.service.TodoAttachmentService;
 import com.example.todo.service.TodoService;
 import com.example.todo.mapper.UserMapper;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.time.LocalDate;
@@ -49,6 +54,7 @@ public class TodoController {
     private final CategoryService categoryService;
     private final UserMapper userMapper;
     private final TodoAttachmentService todoAttachmentService;
+    private final NotificationService notificationService;
 
     @GetMapping("/todos")
     public String list(
@@ -223,7 +229,7 @@ public class TodoController {
             model.addAttribute("categories", categoryService.findAll());
             return "todo/form";
         }
-        todoService.create(
+        Todo created = todoService.create(
                 todoForm.getTitle(),
                 todoForm.getDetail(),
                 todoForm.getPriority(),
@@ -231,6 +237,12 @@ public class TodoController {
                 todoForm.getCategoryId(),
                 principal != null ? principal.getUsername() : todoForm.getAuthor(),
                 requireUser(principal));
+        String to = principal != null ? principal.getUsername() + "@example.com" : "user@example.com";
+        notificationService.sendEmailAsync(
+                to,
+                "ToDo作成完了",
+                "ToDoを作成しました: " + created.getTitle());
+        notificationService.processAsync();
         return "todo/complete";
     }
 
@@ -245,7 +257,7 @@ public class TodoController {
             model.addAttribute("categories", categoryService.findAll());
             return "todo/form";
         }
-        todoService.create(
+        Todo created = todoService.create(
                 todoForm.getTitle(),
                 todoForm.getDetail(),
                 todoForm.getPriority(),
@@ -253,6 +265,12 @@ public class TodoController {
                 todoForm.getCategoryId(),
                 principal != null ? principal.getUsername() : todoForm.getAuthor(),
                 requireUser(principal));
+        String to = principal != null ? principal.getUsername() + "@example.com" : "user@example.com";
+        notificationService.sendEmailAsync(
+                to,
+                "ToDo作成完了",
+                "ToDoを作成しました: " + created.getTitle());
+        notificationService.processAsync();
         redirectAttributes.addFlashAttribute("message", "登録が完了しました");
         redirectAttributes.addFlashAttribute("messageType", "success");
         return "redirect:/todos";
@@ -310,6 +328,27 @@ public class TodoController {
         headers.setContentType(MediaType.parseMediaType("text/csv; charset=UTF-8"));
         headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
         return ResponseEntity.ok().headers(headers).body(bytes);
+    }
+
+    @GetMapping("/todos/async-report")
+    public ResponseEntity<String> asyncReport(@AuthenticationPrincipal UserDetails principal) {
+        User user = requireUser(principal);
+        CompletableFuture<String> reportFuture = notificationService.generateTodoReport(user.getUsername());
+        CompletableFuture<String> summaryFuture = notificationService.generateTodoSummary(user.getUsername());
+        CompletableFuture<Void> all = CompletableFuture.allOf(reportFuture, summaryFuture);
+        try {
+            all.get(3, TimeUnit.SECONDS);
+            String report = reportFuture.get();
+            String summary = summaryFuture.get();
+            return ResponseEntity.ok(report + "\n" + summary);
+        } catch (TimeoutException ex) {
+            return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body("レポート生成がタイムアウトしました");
+        } catch (ExecutionException ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("レポート生成に失敗しました");
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("レポート生成が中断されました");
+        }
     }
 
     private String csv(String value) {

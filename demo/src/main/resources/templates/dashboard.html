@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+﻿<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
     <meta charset="UTF-8">
@@ -10,9 +10,12 @@
 
 <body class="bg-light">
     <main class="container py-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
             <h1 class="h4 mb-0">ダッシュボード</h1>
-            <a class="btn btn-outline-primary" th:href="@{/todos}">一覧へ戻る</a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-primary" th:href="@{/todos}">ToDo一覧</a>
+                <a class="btn btn-outline-secondary" th:href="@{/admin/audit-logs}" sec:authorize="hasRole('ADMIN')">監査ログ</a>
+            </div>
         </div>
 
         <div th:if="${error}" class="alert alert-danger" role="alert">

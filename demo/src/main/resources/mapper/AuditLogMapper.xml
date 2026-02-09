@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.todo.mapper.AuditLogMapper">
+    <resultMap id="AuditLogMap" type="com.example.todo.entity.AuditLog">
+        <id column="id" property="id"/>
+        <result column="action" property="action"/>
+        <result column="entity_type" property="entityType"/>
+        <result column="entity_id" property="entityId"/>
+        <result column="user_id" property="userId"/>
+        <result column="old_value" property="oldValue"/>
+        <result column="new_value" property="newValue"/>
+        <result column="ip_address" property="ipAddress"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="username" property="username"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO audit_logs
+        (action, entity_type, entity_id, user_id, old_value, new_value, ip_address, created_at)
+        VALUES
+        (#{action}, #{entityType}, #{entityId}, #{userId}, #{oldValue}, #{newValue}, #{ipAddress}, CURRENT_TIMESTAMP)
+    </insert>
+
+    <select id="findWithFilters" resultMap="AuditLogMap">
+        SELECT l.id, l.action, l.entity_type, l.entity_id, l.user_id,
+               l.old_value, l.new_value, l.ip_address, l.created_at,
+               u.username
+        FROM audit_logs l
+        LEFT JOIN users u ON l.user_id = u.id
+        WHERE 1=1
+        <if test="action != null and action != ''">
+            AND l.action = #{action}
+        </if>
+        <if test="entityType != null and entityType != ''">
+            AND l.entity_type = #{entityType}
+        </if>
+        <if test="username != null and username != ''">
+            AND u.username LIKE CONCAT('%', #{username}, '%')
+        </if>
+        <if test="from != null">
+            AND l.created_at &gt;= #{from}
+        </if>
+        <if test="to != null">
+            AND l.created_at &lt;= #{to}
+        </if>
+        ORDER BY l.created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countWithFilters" resultType="long">
+        SELECT COUNT(*)
+        FROM audit_logs l
+        LEFT JOIN users u ON l.user_id = u.id
+        WHERE 1=1
+        <if test="action != null and action != ''">
+            AND l.action = #{action}
+        </if>
+        <if test="entityType != null and entityType != ''">
+            AND l.entity_type = #{entityType}
+        </if>
+        <if test="username != null and username != ''">
+            AND u.username LIKE CONCAT('%', #{username}, '%')
+        </if>
+        <if test="from != null">
+            AND l.created_at &gt;= #{from}
+        </if>
+        <if test="to != null">
+            AND l.created_at &lt;= #{to}
+        </if>
+    </select>
+</mapper>

@@ -7,6 +7,7 @@ import com.example.todo.entity.User;
 import com.example.todo.exception.TodoNotFoundException;
 import com.example.todo.mapper.CategoryMapper;
 import com.example.todo.mapper.TodoMapper;
+import com.example.demo.aop.Auditable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ public class TodoService {
     private final TodoEditLogService todoEditLogService;
 
     @Transactional(rollbackFor = Exception.class, noRollbackFor = com.example.todo.exception.BusinessException.class)
+    @Auditable(action = "CREATE", entityType = "TODO")
     public Todo create(String title, String description, Priority priority, LocalDate dueDate, Long categoryId, String author, User user) {
         Todo todo = new Todo();
         todo.setTitle(title);
@@ -68,6 +70,7 @@ public class TodoService {
     }
 
     @Transactional(rollbackFor = Exception.class, noRollbackFor = com.example.todo.exception.BusinessException.class)
+    @Auditable(action = "TOGGLE", entityType = "TODO")
     public Todo toggleCompleted(Long id, User user) {
         Todo todo = getOwnedTodo(id, user);
         if (isAdmin(user)) {
@@ -80,6 +83,7 @@ public class TodoService {
     }
 
     @Transactional(rollbackFor = Exception.class, noRollbackFor = com.example.todo.exception.BusinessException.class)
+    @Auditable(action = "UPDATE", entityType = "TODO")
     public Todo update(Long id, String title, String description, Priority priority, LocalDate dueDate, Long categoryId, User user) {
         Todo todo = getOwnedTodo(id, user);
         if (isAdmin(user) && todo.getUser() != null && !todo.getUser().getId().equals(user.getId())) {
@@ -99,6 +103,7 @@ public class TodoService {
     }
 
     @Transactional(rollbackFor = Exception.class, noRollbackFor = com.example.todo.exception.BusinessException.class)
+    @Auditable(action = "DELETE", entityType = "TODO")
     public void delete(Long id, User user) {
         Todo todo = getOwnedTodo(id, user);
         if (isAdmin(user)) {
@@ -109,6 +114,7 @@ public class TodoService {
     }
 
     @Transactional(rollbackFor = Exception.class, noRollbackFor = com.example.todo.exception.BusinessException.class)
+    @Auditable(action = "BULK_DELETE", entityType = "TODO")
     public void deleteAllByIds(Collection<Long> ids, User user) {
         if (ids == null || ids.isEmpty()) {
             return;

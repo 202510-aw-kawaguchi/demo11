@@ -1,4 +1,4 @@
-﻿package com.example.demo;
+package com.example.demo;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -45,6 +45,7 @@ import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import org.springframework.beans.factory.annotation.Value;
 
 @Controller
 @RequiredArgsConstructor
@@ -55,6 +56,10 @@ public class TodoController {
     private final UserMapper userMapper;
     private final TodoAttachmentService todoAttachmentService;
     private final NotificationService notificationService;
+    @Value("${app.mail.to:}")
+    private String defaultMailTo;
+    @Value("${app.mail.domain:example.com}")
+    private String mailDomain;
 
     @GetMapping("/todos")
     public String list(
@@ -237,11 +242,8 @@ public class TodoController {
                 todoForm.getCategoryId(),
                 principal != null ? principal.getUsername() : todoForm.getAuthor(),
                 requireUser(principal));
-        String to = principal != null ? principal.getUsername() + "@example.com" : "user@example.com";
-        notificationService.sendEmailAsync(
-                to,
-                "ToDo作成完了",
-                "ToDoを作成しました: " + created.getTitle());
+        String to = resolveRecipient(principal);
+        notificationService.sendTodoCreatedTextMail(to, created);
         notificationService.processAsync();
         return "todo/complete";
     }
@@ -265,11 +267,8 @@ public class TodoController {
                 todoForm.getCategoryId(),
                 principal != null ? principal.getUsername() : todoForm.getAuthor(),
                 requireUser(principal));
-        String to = principal != null ? principal.getUsername() + "@example.com" : "user@example.com";
-        notificationService.sendEmailAsync(
-                to,
-                "ToDo作成完了",
-                "ToDoを作成しました: " + created.getTitle());
+        String to = resolveRecipient(principal);
+        notificationService.sendTodoCreatedTextMail(to, created);
         notificationService.processAsync();
         redirectAttributes.addFlashAttribute("message", "登録が完了しました");
         redirectAttributes.addFlashAttribute("messageType", "success");
@@ -445,6 +444,14 @@ public class TodoController {
             throw new org.springframework.security.access.AccessDeniedException("Forbidden");
         }
         return user;
+    }
+
+    private String resolveRecipient(UserDetails principal) {
+        if (defaultMailTo != null && !defaultMailTo.isBlank()) {
+            return defaultMailTo;
+        }
+        String username = principal != null ? principal.getUsername() : "user";
+        return username + "@" + mailDomain;
     }
 
     private String sanitizeFilename(String name) {

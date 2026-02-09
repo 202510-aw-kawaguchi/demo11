@@ -1,0 +1,19 @@
+{
+  "properties": [
+    {
+      "name": "app.mail.from",
+      "type": "java.lang.String",
+      "description": "Default from address used for outgoing mail."
+    },
+    {
+      "name": "app.reminder.days",
+      "type": "java.lang.Integer",
+      "description": "Number of days ahead to include in reminder emails."
+    },
+    {
+      "name": "app.file-storage.path",
+      "type": "java.lang.String",
+      "description": "Local path used to store uploaded files."
+    }
+  ]
+}

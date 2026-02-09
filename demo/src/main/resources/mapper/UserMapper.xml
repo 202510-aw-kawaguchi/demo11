@@ -37,7 +37,8 @@
     <update id="update">
         UPDATE users
         SET role = #{role},
-            enabled = #{enabled}
+            enabled = #{enabled},
+            password = #{password}
         WHERE id = #{id}
     </update>
 </mapper>

@@ -1,0 +1,19 @@
+﻿<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>毎日期限ToDoリマインダー</title>
+</head>
+<body>
+    <h2>毎日期限ToDoリマインダー</h2>
+    <p>期限が近いToDoの一覧です。</p>
+    <ul>
+        <li th:each="todo : ${todos}">
+            <span th:text="${todo.title}">タイトル</span>
+            <span th:if="${todo.dueDate != null}">
+                (期限: <span th:text="${#temporals.format(todo.dueDate, 'yyyy/MM/dd')}">-</span>)
+            </span>
+        </li>
+    </ul>
+</body>
+</html>

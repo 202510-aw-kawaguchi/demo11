@@ -39,9 +39,9 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/users/{id}")
     public String updateUser(@PathVariable Long id,
-                             String role,
-                             Boolean enabled,
-                             RedirectAttributes redirectAttributes) {
+            String role,
+            Boolean enabled,
+            RedirectAttributes redirectAttributes) {
         var user = userMapper.findById(id);
         if (user == null) {
             redirectAttributes.addFlashAttribute("message", "指定されたユーザーが見つかりません");

@@ -174,6 +174,20 @@
         ORDER BY t.created_at DESC
     </select>
 
+    <select id="findDueBetween" resultMap="TodoMap">
+        <include refid="BaseSelect"/>
+        WHERE t.due_date BETWEEN #{start} AND #{end}
+        AND (t.completed = FALSE OR t.completed IS NULL)
+        ORDER BY t.user_id, t.due_date ASC
+    </select>
+
+    <select id="findByDeadline" resultMap="TodoMap">
+        <include refid="BaseSelect"/>
+        WHERE t.due_date = #{deadline}
+        AND (t.completed = FALSE OR t.completed IS NULL)
+        ORDER BY t.user_id, t.due_date ASC
+    </select>
+
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO todos
         (title, description, author, user_id, category_id, due_date, priority, completed, created_at, updated_at, version)

@@ -6,31 +6,39 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
+    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
-        if (userMapper.findByUsername("user") == null) {
+        upsertUser("user", "password", "USER");
+        upsertUser("admin", "admin", "ADMIN");
+    }
+
+    private void upsertUser(String username, String rawPassword, String role) {
+        User existing = userMapper.findByUsername(username);
+        if (existing == null) {
             User user = new User();
-            user.setUsername("user");
-            user.setPassword(passwordEncoder.encode("password"));
-            user.setRole("USER");
+            user.setUsername(username);
+            user.setPassword(passwordEncoder.encode(rawPassword));
+            user.setRole(role);
             user.setEnabled(true);
             userMapper.insert(user);
+            log.info("Created user {} with role {}", username, role);
+            return;
         }
-        if (userMapper.findByUsername("admin") == null) {
-            User admin = new User();
-            admin.setUsername("admin");
-            admin.setPassword(passwordEncoder.encode("adminpass"));
-            admin.setRole("ADMIN");
-            admin.setEnabled(true);
-            userMapper.insert(admin);
-        }
+        existing.setPassword(passwordEncoder.encode(rawPassword));
+        existing.setRole(role);
+        existing.setEnabled(true);
+        userMapper.update(existing);
+        log.info("Updated user {} with role {}", username, role);
     }
 }

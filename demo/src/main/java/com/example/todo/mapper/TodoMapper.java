@@ -60,6 +60,9 @@ public interface TodoMapper {
 
     List<Todo> findByUserId(@Param("userId") Long userId);
     List<Todo> findByUsername(@Param("username") String username);
+    List<Todo> findDueBetween(@Param("start") java.time.LocalDate start,
+            @Param("end") java.time.LocalDate end);
+    List<Todo> findByDeadline(@Param("deadline") java.time.LocalDate deadline);
 
     int insert(Todo todo);
     int update(Todo todo);

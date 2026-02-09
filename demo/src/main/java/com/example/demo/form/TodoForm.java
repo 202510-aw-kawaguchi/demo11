@@ -8,6 +8,16 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import com.example.todo.entity.Priority;
 
+/**
+ * ToDo入力フォーム。
+ *
+ * <p>期限日は {@code yyyy-MM-dd} 形式で扱います。</p>
+ *
+ * @author Codex
+ * @version 1.0
+ * @since 1.0
+ * @see com.example.todo.entity.Todo
+ */
 @Data
 public class TodoForm {
     private Long id;

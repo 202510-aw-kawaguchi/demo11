@@ -15,14 +15,40 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Service class that provides ToDo business logic.
+ *
+ * <p>Handles CRUD operations and applies business rules.</p>
+ *
+ * <h2>Example</h2>
+ * <pre>{@code
+ * Todo created = todoService.create(
+ *     "Shopping",
+ *     "Buy milk and bread",
+ *     Priority.MEDIUM,
+ *     LocalDate.now().plusDays(1),
+ *     null,
+ *     "yamada",
+ *     user
+ * );
+ * }</pre>
+ *
+ * @author Codex
+ * @version 1.0
+ * @since 2024-01-01
+ * @see com.example.demo.TodoController
+ * @see com.example.todo.mapper.TodoMapper
+ * @see TodoOperations
+ */
 @Service
 @RequiredArgsConstructor
-public class TodoService {
+public class TodoService implements TodoOperations {
 
     private final TodoMapper todoMapper;
     private final CategoryMapper categoryMapper;
     private final TodoEditLogService todoEditLogService;
 
+    /** {@inheritDoc} */
     @Transactional(rollbackFor = Exception.class, noRollbackFor = com.example.todo.exception.BusinessException.class)
     @Auditable(action = "CREATE", entityType = "TODO")
     public Todo create(String title, String description, Priority priority, LocalDate dueDate, Long categoryId, String author, User user) {
@@ -39,6 +65,7 @@ public class TodoService {
         return todo;
     }
 
+    /** {@inheritDoc} */
     @Transactional(readOnly = true)
     public List<Todo> findByUserWithFilters(User user, String keyword, Long categoryId, String sort, String dir, int page, int size) {
         int offset = Math.max(page, 0) * size;
@@ -48,6 +75,7 @@ public class TodoService {
         return todoMapper.findByUserWithFilters(user.getId(), keyword, categoryId, sort, dir, size, offset);
     }
 
+    /** {@inheritDoc} */
     @Transactional(readOnly = true)
     public List<Todo> findByUserWithFiltersNoPaging(User user, String keyword, Long categoryId, String sort, String dir) {
         if (isAdmin(user)) {
@@ -56,6 +84,7 @@ public class TodoService {
         return todoMapper.findByUserWithFiltersNoPaging(user.getId(), keyword, categoryId, sort, dir);
     }
 
+    /** {@inheritDoc} */
     @Transactional(readOnly = true)
     public long countByUserWithFilters(User user, String keyword, Long categoryId) {
         if (isAdmin(user)) {
@@ -64,11 +93,13 @@ public class TodoService {
         return todoMapper.countByUserWithFilters(user.getId(), keyword, categoryId);
     }
 
+    /** {@inheritDoc} */
     @Transactional(readOnly = true)
     public Todo findById(Long id, User user) {
         return getOwnedTodo(id, user);
     }
 
+    /** {@inheritDoc} */
     @Transactional(rollbackFor = Exception.class, noRollbackFor = com.example.todo.exception.BusinessException.class)
     @Auditable(action = "TOGGLE", entityType = "TODO")
     public Todo toggleCompleted(Long id, User user) {
@@ -82,6 +113,7 @@ public class TodoService {
         return todo;
     }
 
+    /** {@inheritDoc} */
     @Transactional(rollbackFor = Exception.class, noRollbackFor = com.example.todo.exception.BusinessException.class)
     @Auditable(action = "UPDATE", entityType = "TODO")
     public Todo update(Long id, String title, String description, Priority priority, LocalDate dueDate, Long categoryId, User user) {
@@ -102,6 +134,7 @@ public class TodoService {
         return todo;
     }
 
+    /** {@inheritDoc} */
     @Transactional(rollbackFor = Exception.class, noRollbackFor = com.example.todo.exception.BusinessException.class)
     @Auditable(action = "DELETE", entityType = "TODO")
     public void delete(Long id, User user) {
@@ -113,6 +146,7 @@ public class TodoService {
         }
     }
 
+    /** {@inheritDoc} */
     @Transactional(rollbackFor = Exception.class, noRollbackFor = com.example.todo.exception.BusinessException.class)
     @Auditable(action = "BULK_DELETE", entityType = "TODO")
     public void deleteAllByIds(Collection<Long> ids, User user) {

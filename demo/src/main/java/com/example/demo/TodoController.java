@@ -49,6 +49,15 @@ import org.springframework.beans.factory.annotation.Value;
 
 @Controller
 @RequiredArgsConstructor
+/**
+ * Web controller for ToDo pages.
+ *
+ * @author Codex
+ * @version 1.0
+ * @since 1.0
+ * @see com.example.todo.service.TodoService
+ * @see com.example.demo.service.NotificationService
+ */
 public class TodoController {
 
     private final TodoService todoService;
@@ -61,6 +70,9 @@ public class TodoController {
     @Value("${app.mail.domain:example.com}")
     private String mailDomain;
 
+/**
+ * GET /todos
+ */
     @GetMapping("/todos")
     public String list(
             @RequestParam(required = false) String keyword,
@@ -104,16 +116,25 @@ public class TodoController {
         return "todo/list";
     }
 
+/**
+ * GET /
+ */
     @GetMapping("/")
     public String root() {
         return "redirect:/todos";
     }
 
+/**
+ * GET /todos/admin/users
+ */
     @GetMapping("/todos/admin/users")
     public String redirectAdminUsers() {
         return "redirect:/admin/users";
     }
 
+/**
+ * GET /todos/new
+ */
     @GetMapping("/todos/new")
     public String newTodo(@AuthenticationPrincipal UserDetails principal, Model model) {
         TodoForm form = new TodoForm();
@@ -125,6 +146,9 @@ public class TodoController {
         return "todo/form";
     }
 
+/**
+ * GET /todos/{id}
+ */
     @GetMapping("/todos/{id}")
     public String showTodo(@PathVariable Long id, @AuthenticationPrincipal UserDetails principal, Model model) {
         var todo = todoService.findById(id, requireUser(principal));
@@ -133,6 +157,9 @@ public class TodoController {
         return "todo/show";
     }
 
+/**
+ * GET /todos/{id}/edit
+ */
     @GetMapping("/todos/{id}/edit")
     public String editTodo(@PathVariable Long id, @AuthenticationPrincipal UserDetails principal, Model model) {
         var todo = todoService.findById(id, requireUser(principal));
@@ -142,6 +169,9 @@ public class TodoController {
         return "todo/edit";
     }
 
+/**
+ * POST /todos/{id}/attachments
+ */
     @PostMapping("/todos/{id}/attachments")
     public String uploadAttachment(@PathVariable Long id,
             @RequestParam("file") MultipartFile file,
@@ -149,21 +179,24 @@ public class TodoController {
             RedirectAttributes redirectAttributes) {
         todoService.findById(id, requireUser(principal));
         if (file == null || file.isEmpty()) {
-            redirectAttributes.addFlashAttribute("message", "ファイルを選択してください");
+            redirectAttributes.addFlashAttribute("message", "Operation completed");
             redirectAttributes.addFlashAttribute("messageType", "warning");
             return "redirect:/todos/" + id + "/edit";
         }
         try {
             todoAttachmentService.addAttachment(id, file);
-            redirectAttributes.addFlashAttribute("message", "ファイルをアップロードしました");
+            redirectAttributes.addFlashAttribute("message", "Operation completed");
             redirectAttributes.addFlashAttribute("messageType", "success");
         } catch (IOException ex) {
-            redirectAttributes.addFlashAttribute("message", "ファイルの保存に失敗しました");
+            redirectAttributes.addFlashAttribute("message", "Operation completed");
             redirectAttributes.addFlashAttribute("messageType", "danger");
         }
         return "redirect:/todos/" + id + "/edit";
     }
 
+/**
+ * GET /todos/{id}/attachments/{attachmentId}
+ */
     @GetMapping("/todos/{id}/attachments/{attachmentId}")
     public ResponseEntity<byte[]> downloadAttachment(@PathVariable Long id,
             @PathVariable Long attachmentId,
@@ -184,6 +217,9 @@ public class TodoController {
                 .body(bytes);
     }
 
+/**
+ * POST /todos/{id}/attachments/{attachmentId}/delete
+ */
     @PostMapping("/todos/{id}/attachments/{attachmentId}/delete")
     public String deleteAttachment(@PathVariable Long id,
             @PathVariable Long attachmentId,
@@ -192,21 +228,24 @@ public class TodoController {
         todoService.findById(id, requireUser(principal));
         var attachment = todoAttachmentService.findByIdAndTodoId(attachmentId, id);
         if (attachment == null) {
-            redirectAttributes.addFlashAttribute("message", "添付ファイルが見つかりません");
+            redirectAttributes.addFlashAttribute("message", "Operation completed");
             redirectAttributes.addFlashAttribute("messageType", "danger");
             return "redirect:/todos/" + id + "/edit";
         }
         try {
             todoAttachmentService.deleteAttachment(attachment);
-            redirectAttributes.addFlashAttribute("message", "添付ファイルを削除しました");
+            redirectAttributes.addFlashAttribute("message", "Operation completed");
             redirectAttributes.addFlashAttribute("messageType", "success");
         } catch (IOException ex) {
-            redirectAttributes.addFlashAttribute("message", "添付ファイルの削除に失敗しました");
+            redirectAttributes.addFlashAttribute("message", "Operation completed");
             redirectAttributes.addFlashAttribute("messageType", "danger");
         }
         return "redirect:/todos/" + id + "/edit";
     }
 
+/**
+ * POST /todos/confirm
+ */
     @PostMapping("/todos/confirm")
     public String confirmTodo(
             @Valid @ModelAttribute("todoForm") TodoForm todoForm,
@@ -223,6 +262,9 @@ public class TodoController {
         return "todo/confirm";
     }
 
+/**
+ * POST /todos/complete
+ */
     @PostMapping("/todos/complete")
     public String completeTodo(
             @Valid @ModelAttribute("todoForm") TodoForm todoForm,
@@ -248,6 +290,9 @@ public class TodoController {
         return "todo/complete";
     }
 
+/**
+ * POST /todos/create
+ */
     @PostMapping("/todos/create")
     public String create(
             @Valid @ModelAttribute("todoForm") TodoForm todoForm,
@@ -270,11 +315,14 @@ public class TodoController {
         String to = resolveRecipient(principal);
         notificationService.sendTodoCreatedTextMail(to, created);
         notificationService.processAsync();
-        redirectAttributes.addFlashAttribute("message", "登録が完了しました");
+        redirectAttributes.addFlashAttribute("message", "Operation completed");
         redirectAttributes.addFlashAttribute("messageType", "success");
         return "redirect:/todos";
     }
 
+/**
+ * GET /todos/export
+ */
     @GetMapping("/todos/export")
     public ResponseEntity<byte[]> exportCsv(
             @RequestParam(required = false) String keyword,
@@ -291,11 +339,11 @@ public class TodoController {
 
         StringBuilder sb = new StringBuilder();
         sb.append("\uFEFF");
-        sb.append("ID,タイトル,登録者,カテゴリ,優先度,ステータス,作成日,期限日\n");
+        sb.append("ID,驛｢・ｧ繝ｻ・ｿ驛｢・ｧ繝ｻ・､驛｢譎冗樟・弱・鬨ｾ蜈ｷ・ｽ・ｻ鬯ｪ・ｭ繝ｻ・ｲ鬮｢・ｰ郢晢ｽｻ驛｢・ｧ繝ｻ・ｫ驛｢譏ｴ繝ｻ邵ｺ荵滂ｽｹ譎｢・ｽ・ｪ,髯ｷ繝ｻ・ｽ・ｪ髯ｷ莠包ｽｺ・･繝ｻ・ｺ繝ｻ・ｦ,驛｢・ｧ繝ｻ・ｹ驛｢譏ｴ繝ｻ郢晢ｽｻ驛｢・ｧ繝ｻ・ｿ驛｢・ｧ繝ｻ・ｹ,髣厄ｽｴ隲帛現繝ｻ髫ｴ魃会ｽｽ・･,髫ｴ蟶ｶ・ｻ繝ｻ蠢憺垓魃会ｽｽ・･\n");
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
         DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy/MM/dd");
         for (Todo todo : todos) {
-            String status = Boolean.TRUE.equals(todo.getCompleted()) ? "完了" : "未完了";
+            String status = Boolean.TRUE.equals(todo.getCompleted()) ? "Completed" : "Pending";
             LocalDateTime created = todo.getCreatedAt() != null ? todo.getCreatedAt() : todo.getUpdatedAt();
             String createdAt = created != null ? created.format(dtf) : "";
             String createdAtExcel = createdAt.isEmpty() ? "" : "=\"" + createdAt + "\"";
@@ -329,6 +377,9 @@ public class TodoController {
         return ResponseEntity.ok().headers(headers).body(bytes);
     }
 
+/**
+ * GET /todos/async-report
+ */
     @GetMapping("/todos/async-report")
     public ResponseEntity<String> asyncReport(@AuthenticationPrincipal UserDetails principal) {
         User user = requireUser(principal);
@@ -341,12 +392,12 @@ public class TodoController {
             String summary = summaryFuture.get();
             return ResponseEntity.ok(report + "\n" + summary);
         } catch (TimeoutException ex) {
-            return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body("レポート生成がタイムアウトしました");
+            return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body("Report generation timed out");
         } catch (ExecutionException ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("レポート生成に失敗しました");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Report generation failed");
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("レポート生成が中断されました");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Report generation failed");
         }
     }
 
@@ -359,6 +410,9 @@ public class TodoController {
         return needQuote ? "\"" + escaped + "\"" : escaped;
     }
 
+/**
+ * POST /todos/{id}/update
+ */
     @PostMapping("/todos/{id}/update")
     public String update(
             @PathVariable Long id,
@@ -371,33 +425,42 @@ public class TodoController {
             RedirectAttributes redirectAttributes) {
 
         todoService.update(id, title, description, priority, dueDate, categoryId, requireUser(principal));
-        redirectAttributes.addFlashAttribute("message", "更新が完了しました");
+        redirectAttributes.addFlashAttribute("message", "Operation completed");
         return "redirect:/todos";
     }
 
+/**
+ * POST /todos/{id}/delete
+ */
     @PostMapping("/todos/{id}/delete")
     public String delete(@PathVariable Long id, @AuthenticationPrincipal UserDetails principal,
             RedirectAttributes redirectAttributes) {
         todoService.delete(id, requireUser(principal));
-        redirectAttributes.addFlashAttribute("message", "ToDoを削除しました");
+        redirectAttributes.addFlashAttribute("message", "Operation completed");
         redirectAttributes.addFlashAttribute("messageType", "success");
         return "redirect:/todos";
     }
 
+/**
+ * POST /todos/bulk-delete
+ */
     @PostMapping("/todos/bulk-delete")
     public String bulkDelete(@RequestParam(required = false) List<Long> ids,
             @AuthenticationPrincipal UserDetails principal, RedirectAttributes redirectAttributes) {
         todoService.deleteAllByIds(ids, requireUser(principal));
         if (ids == null || ids.isEmpty()) {
-            redirectAttributes.addFlashAttribute("message", "削除する項目が選択されていません");
+            redirectAttributes.addFlashAttribute("message", "Operation completed");
             redirectAttributes.addFlashAttribute("messageType", "warning");
         } else {
-            redirectAttributes.addFlashAttribute("message", "選択したToDoを削除しました");
+            redirectAttributes.addFlashAttribute("message", "Operation completed");
             redirectAttributes.addFlashAttribute("messageType", "success");
         }
         return "redirect:/todos";
     }
 
+/**
+ * POST /todos/{id}/toggle
+ */
     @PostMapping("/todos/{id}/toggle")
     public Object toggle(@PathVariable Long id, @AuthenticationPrincipal UserDetails principal,
             HttpServletRequest request, RedirectAttributes redirectAttributes) {
@@ -408,11 +471,14 @@ public class TodoController {
                     "id", updated.getId(),
                     "completed", updated.getCompleted()));
         }
-        redirectAttributes.addFlashAttribute("message", "完了状態を更新しました");
+        redirectAttributes.addFlashAttribute("message", "Operation completed");
         redirectAttributes.addFlashAttribute("messageType", "success");
         return "redirect:/todos";
     }
 
+/**
+ * Handle access denied.
+ */
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public String handleAccessDenied(AccessDeniedException ex) {

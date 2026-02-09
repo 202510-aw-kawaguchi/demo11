@@ -118,6 +118,24 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.6.0</version>
+				<configuration>
+					<encoding>UTF-8</encoding>
+					<charset>UTF-8</charset>
+					<docencoding>UTF-8</docencoding>
+					<locale>en_US</locale>
+					<author>true</author>
+					<version>true</version>
+					<additionalJOptions>
+						<additionalJOption>-J-Dfile.encoding=UTF-8</additionalJOption>
+						<additionalJOption>-J-Duser.language=en</additionalJOption>
+						<additionalJOption>-J-Duser.country=US</additionalJOption>
+					</additionalJOptions>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>

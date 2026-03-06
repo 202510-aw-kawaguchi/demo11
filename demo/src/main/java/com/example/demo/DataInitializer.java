@@ -20,7 +20,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         upsertUser("user", "password", "USER");
-        upsertUser("admin", "admin", "ADMIN");
+        upsertUser("admin", "password", "ADMIN");
     }
 
     private void upsertUser(String username, String rawPassword, String role) {

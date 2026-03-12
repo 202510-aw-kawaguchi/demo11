@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -80,9 +81,14 @@ class TodoControllerIntegrationTest {
         user.setId(1L);
         user.setUsername("user");
         user.setRole("USER");
+        com.example.todo.entity.Todo created = new com.example.todo.entity.Todo();
+        created.setId(10L);
+        created.setTitle("t1");
         when(userMapper.findByUsername("user")).thenReturn(user);
+        when(todoService.create(anyString(), anyString(), any(), any(), any(), anyString(), any())).thenReturn(created);
 
         MockHttpServletRequestBuilder req = post("/todos/create")
+                .with(csrf())
                 .param("author", "user")
                 .param("title", "t1")
                 .param("detail", "d1");
